@@ -103,6 +103,12 @@ function Generate() {
   };
 
   return (
+
+    <div className="home-container">
+    <div className="main-title">
+      <h1>Mis Proyectos</h1>
+    </div>
+
     <div style={{ width: 1400 }}>
       <form style={{ width: 1400 }} onSubmit={onSubmit}>
         <Box // Cuerpo de pagina
@@ -283,6 +289,7 @@ function Generate() {
           <p>Generando texto, por favor espere...</p>
         </div>
       )}
+    </div>
     </div>
   );
 }

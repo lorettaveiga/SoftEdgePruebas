@@ -46,6 +46,42 @@
   border: 1px solid #979797;
 }
 
+.generate-container {
+  padding: 0;
+  background-color: white;
+  min-height: 100vh;
+  font-family: 'Arial', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  align-items: center;
+}
+
+.generate-title {
+  background-color: #f0e6ff;
+  padding: 15px 0;
+  width: 100%;
+  text-align: center;
+}
+
+.generate-title h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  margin: 10px auto;
+  width: 100%;
+  max-width: 1000px;
+  background-color: white;
+}
 .prompt-text {
   width: 100%;
   display: flex;
