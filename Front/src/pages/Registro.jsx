@@ -1,25 +1,30 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ErrorPopup from "../components/ErrorPopup"; // Importamos el popup de error
+import SuccessPopup from "../components/SuccessPopup"; // Importamos el popup de éxito
 import "../css/Registro.css"; 
 
 const Registro = () => {
   const navigate = useNavigate();
 
   const [usuario, setUsuario] = useState("");
+  const [appellido, setApellido] = useState("");
   const [correo, setCorreo] = useState("");
   const [telefono, setTelefono] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [confirmar, setConfirmar] = useState("");
+  const [error, setError] = useState(null); // Estado para manejar el mensaje de error
+  const [successMessage, setSuccessMessage] = useState(null); // Estado para manejar el mensaje de éxito
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!usuario || !correo || !telefono || !contrasena || !confirmar) {
-      alert("Por favor llena todos los campos.");
+      setError("Por favor llena todos los campos."); // Muestra el popup de error
       return;
     }
 
     if (contrasena !== confirmar) {
-      alert("Las contraseñas no coinciden.");
+      setError("Las contraseñas no coinciden."); // Muestra el popup de error
       return;
     }
 
@@ -30,6 +35,7 @@ const Registro = () => {
       },
       body: JSON.stringify({
         name: usuario,
+        lastname: appellido,
         email: correo,
         phone: telefono,
         password: contrasena,
@@ -37,12 +43,20 @@ const Registro = () => {
     });
 
     if (response.ok) {
-      alert("¡Registro exitoso!");
-      navigate("/login");
+      setSuccessMessage("¡Registro exitoso!"); // Muestra el popup de éxito
     } else {
       const errorData = await response.json();
-      alert(`Error al registrarse: ${errorData.message || "Error desconocido"}`);
+      setError(`Error al registrarse: ${errorData.message || "Error desconocido"}`); // Muestra el popup de error
     }
+  };
+
+  const closeErrorPopup = () => {
+    setError(null); // Cierra el popup de error
+  };
+
+  const closeSuccessPopup = () => {
+    setSuccessMessage(null); // Cierra el popup de éxito
+    navigate("/login"); // Redirige al login después de cerrar el popup
   };
 
   return (
@@ -77,6 +91,12 @@ const Registro = () => {
           />
           <input
             className="input"
+            type="text"
+            placeholder="Apellido"
+            onChange={(e) => setApellido(e.target.value)}
+          />
+          <input
+            className="input"
             type="tel"
             placeholder="Número de Teléfono"
             onChange={(e) => setTelefono(e.target.value)}
@@ -98,6 +118,12 @@ const Registro = () => {
           </button>
         </form>
       </div>
+
+      {/* Popup de error */}
+      <ErrorPopup message={error} onClose={closeErrorPopup} />
+
+      {/* Popup de éxito */}
+      <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
     </div>
   );
 };

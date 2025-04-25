@@ -1,50 +1,71 @@
-import { Box, TextField, Typography, Button } from "@mui/material";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../components/AuthContext";
+import { UserContext } from "../components/UserContext";
+import ErrorPopup from "../components/ErrorPopup"; // Importamos el componente de popup de error
+import SuccessPopup from "../components/SuccessPopup"; // Importamos el componente de popup de éxito
 
-import "../css/Login.css"; 
+import "../css/Login.css";
 
-const Login = ({ tryLogin }) => {
-  const navigate = useNavigate();
-  const [message, setMessage] = useState("");
+const Login = () => {
+  const { setIsLogin } = useContext(AuthContext); // Usamos el contexto de autenticación
+  const { setUserId, setRole } = React.useContext(UserContext); // Usamos el contexto de usuario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null); // Estado para manejar el mensaje de error
+  const [successMessage, setSuccessMessage] = useState(null); // Estado para manejar el mensaje de éxito
+  const navigate = useNavigate();
 
-  const getTest = async () => {
+  const tryLogin = async (user) => {
     try {
-      const result = await fetch("http://localhost:5001");
-      const text = await result.text();
-      console.log(text);
-      if (!text.includes("<!DOCTYPE")) {
-        setMessage(text);
+      const result = await fetch("http://localhost:5001/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+
+      const data = await result.json();
+
+      if (result.ok && data.success) {
+        localStorage.setItem("token", data.token); // Guardar el token en el almacenamiento local
+        localStorage.setItem("userId", data.user.id); // Guardar el userId en el almacenamiento local
+        localStorage.setItem("role", data.user.role); // Guardar el rol en el almacenamiento local
+        setIsLogin(true);
+        setUserId(data.user.id); // Guardar el userId en el contexto
+        setRole(data.user.role); // Guardar el rol en el contexto
+        return true;
+      } else {
+        setError(data.message || "Error al iniciar sesión"); // Establece el mensaje de error
+        return false;
       }
     } catch (error) {
-      console.error("Error al conectar con la API:", error);
+      console.error("Login error:", error);
+      setError(
+        "Error al intentar iniciar sesión. Por favor, verifica tu conexión o intenta más tarde."
+      ); // Establece el mensaje de error
+      return false;
     }
   };
-
-  useEffect(() => {
-    getTest();
-  }, []);
 
   const onsubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      alert("Favor de llenar todos los campos.");
+      setError("Favor de llenar todos los campos."); // Muestra el error si faltan campos
       return;
     }
-
+    setIsLoading(true);
     const isLogin = await tryLogin({ email, password });
 
     if (isLogin) {
-      setEmail("");
-      setPassword("");
-      alert("Login logrado!");
-      navigate("/dungeon");
-    } else {
-      alert("Login fallido: Email o contraseña incorrectos.");
+      setSuccessMessage("¡Inicio de sesión exitoso!"); // Muestra el popup de éxito
     }
+    setIsLoading(false);
+  };
+
+  const handleSuccessClose = () => {
+    setSuccessMessage(null); // Cierra el popup de éxito
+    navigate("/home"); // Redirige a la página principal después de cerrar el popup
   };
 
   const goToRegister = () => {
@@ -58,11 +79,11 @@ const Login = ({ tryLogin }) => {
         <h1 className="title">Inicia Sesión</h1>
         <h2 className="subtitle">FRIDA Product Planner</h2>
         <p className="login-text">
-
-        Si todavía no tienes una cuenta.         
-        <br /> <br />
-        <span className="register-link" onClick={goToRegister}>¡Regístrate Aquí!</span>
-
+          Si todavía no tienes una cuenta.
+          <br /> <br />
+          <span className="register-link" onClick={goToRegister}>
+            ¡Regístrate Aquí!
+          </span>
         </p>
         <img
           src="/Login.png"
@@ -70,7 +91,6 @@ const Login = ({ tryLogin }) => {
           className="illustration"
         />
       </div>
-
       <div className="login-right">
         <form className="form" onSubmit={onsubmit}>
           <h2 className="form-title">Inicio de Sesión</h2>
@@ -93,6 +113,19 @@ const Login = ({ tryLogin }) => {
           </button>
         </form>
       </div>
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <p>Iniciando sesión...</p>
+        </div>
+      )}
+      {/* Popup de error */}
+      {/* Cierra el popup de error al limpiar el mensaje */}
+      <ErrorPopup message={error} onClose={() => setError(null)} />
+      {/* Popup de éxito */}
+      {successMessage && (
+        <SuccessPopup message={successMessage} onClose={handleSuccessClose} />
+      )}
     </div>
   );
 };

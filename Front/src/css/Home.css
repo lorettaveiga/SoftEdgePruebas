@@ -1,11 +1,12 @@
-
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -14,11 +15,37 @@ html, body, #root {
   background-color: white;
 }
 
+.white-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.softedge-logo img {
+  width: 100%;
+  height: auto;
+}
+
+.softedge-logo {
+  display: flex;
+  align-items: left;
+  height: 50px;
+  width: auto;
+}
+
 .home-container {
   padding: 0;
   background-color: white;
   min-height: 100vh;
-  font-family: 'Arial', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Arial", -apple-system, BlinkMacSystemFont, sans-serif;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -162,7 +189,7 @@ html, body, #root {
 .plus-icon {
   width: 60px;
   height: 60px;
-  background-color: #9370DB;
+  background-color: #9370db;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -173,7 +200,7 @@ html, body, #root {
 }
 
 .new-project-text {
-  color: #9370DB;
+  color: #9370db;
   font-size: 16px;
   font-weight: 600;
   text-align: center;
@@ -198,7 +225,7 @@ html, body, #root {
     gap: 15px;
     padding: 10px 20px;
   }
-  
+
   .projects-grid {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 20px 40px;

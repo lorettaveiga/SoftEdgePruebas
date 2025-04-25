@@ -70,11 +70,14 @@ button:focus-visible {
 }
 
 .secondary-button {
-  width: 17%;
+  min-width: 100px;
+  white-space: nowrap;
+  text-align: center;
   background-color: #eddff6;
   color: #9e72be;
   border: 1px solid #979797;
 }
+
 .secondary-button:hover {
   background-color: #e1d3e8;
 }
@@ -90,4 +93,84 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.white-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  max-height: 1000px;
+}
+
+.logo-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.softedge-logo img {
+  width: 100%;
+  height: auto;
+}
+
+.softedge-logo {
+  display: flex;
+  align-items: left;
+  height: 50px;
+  width: auto;
+}
+
+.profile-container {
+  display: flex;
+  height: 40px;
+  width: 40px;
+  border-radius: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: black;
+}
+
+.profile-container:hover {
+  cursor: pointer;
+  background-color: #9e72be;
+}
+
+.profile-popup {
+  position: absolute;
+  top: 70px;
+  right: 2%;
+  width: 150px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-popup-tab {
+  height: 30px;
+  border-radius: 4px;
+  background-color: #eddff6;
+  color: #9e72be;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profile-popup-tab:hover {
+  background-color: #e1d3e8;
+}
+
+.profile-popup-tab p {
+  margin: 0 auto;
 }
