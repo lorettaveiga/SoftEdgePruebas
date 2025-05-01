@@ -35,7 +35,6 @@ const Dashboard = () => {
 
   const [teamMembers, setTeamMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
-  const [countdown, setCountdown] = useState(3);
 
   const [editData, setEditData] = useState({
     title: "",
@@ -68,13 +67,6 @@ const Dashboard = () => {
   const [deleteMode, setDeleteMode] = useState(false);
   const [taskToSelect, setTaskToSelect] = useState(null);
 
-  const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] =
-    useState(false);
-  const [projectToDelete, setProjectToDelete] = useState(null);
-
-  // Estado para manejar el número máximo de tareas
-  const [nextTaskNumber, setNextTaskNumber] = useState(0);
-
   // UseEffect para cargar el proyecto y los miembros del equipo
   useEffect(() => {
     const fetchData = async () => {
@@ -82,31 +74,11 @@ const Dashboard = () => {
       await fetchProject();
       const projectMembers = await fetchTeamMembers(); // Llamar primero para filtrar usuarios
       await fetchAvailableUsers(projectMembers);
-      await fetchAllTasks(); // Llamar para obtener todas las tareas
       setLoading(false);
     };
 
     fetchData();
   }, [projectId]);
-
-  // UseEffect para manejar el temporizador de cuenta regresiva
-  useEffect(() => {
-    if (showProjectDeleteConfirmation) {
-      let timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    } else {
-      setCountdown(3);
-    }
-  }, [showProjectDeleteConfirmation]);
 
   const fetchProject = async () => {
     try {
@@ -214,33 +186,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching team members:", error);
       setError("Error al cargar los miembros del equipo.");
-    }
-  };
-
-  const fetchAllTasks = async () => {
-    try {
-      const resp = await fetch(
-        `http://localhost:5001/projectsFB/${projectId}/all-tasks`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      if (!resp.ok) throw new Error("Failed to fetch all tasks");
-
-      const { tasks: dbTasks } = await resp.json();
-
-      // Guardar las tareas en el estado local
-
-      // Calcular el siguiente número de tarea
-      const nextTaskNumber = dbTasks.length;
-      setNextTaskNumber(nextTaskNumber);
-      console.log(nextTaskNumber);
-    } catch (error) {
-      console.error("Error fetching all tasks:", error);
     }
   };
 
@@ -391,19 +336,14 @@ const Dashboard = () => {
       );
       if (!resp.ok) throw new Error("Failed to fetch tasks");
       const { tasks: dbTasks } = await resp.json();
-      // Mapear al formato de front con prefijo 'T' y padding de 2 dígitos
-      const mapped = dbTasks.map((t) => {
-        const rawId = t.id.toString();
-        const num = rawId.startsWith("T") ? rawId.slice(1) : rawId;
-        const padded = num.padStart(2, "0");
-        return {
-          id: `T${padded}`,
-          title: t.titulo,
-          description: t.descripcion,
-          priority: t.prioridad,
-          assignee: teamMembers.find((m) => m.id === t.asignados)?.email || "",
-        };
-      });
+      // Mapear al formato de front
+      const mapped = dbTasks.map((t) => ({
+        id: t.id,
+        title: t.titulo,
+        description: t.descripcion,
+        priority: t.prioridad,
+        assignee: teamMembers.find((m) => m.id === t.asignados)?.email || "",
+      }));
       setTasks((prev) => ({ ...prev, [item.id]: mapped }));
     } catch (err) {
       console.error("Error fetching tasks:", err);
@@ -685,39 +625,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteProject = async (projectId) => {
-    setProjectToDelete(projectId);
-    setShowProjectDeleteConfirmation(true);
-  };
-
-  const confirmDeleteProject = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:5001/projectsFB/${projectId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to delete project");
-
-      setSuccessMessage("Proyecto eliminado exitosamente.");
-      setTimeout(() => {
-        navigate("/home");
-      }, 1000);
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      setError("Error al eliminar el proyecto. Por favor, inténtalo de nuevo.");
-    } finally {
-      sethShowProjectDeleteConfirmation(false);
-      setProjectToDelete(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="white-container">
@@ -787,24 +694,14 @@ const Dashboard = () => {
         ) : (
           <>
             <h1>{project.nombreProyecto}</h1>
-            <p style={{ marginBottom: "10px", fontSize: "16px" }}>
-              {project.descripcion}
-            </p>
+            <p style={{ marginBottom: "10px", fontSize: '16px'}}>{project.descripcion}</p>
             {(role === "admin" || role === "editor") && (
-              <div className="button-container">
-                <button
-                  className="popup-button primary"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Editar Proyecto
-                </button>
-                <button
-                  className="popup-button delete"
-                  onClick={() => handleDeleteProject(projectId)}
-                >
-                  Eliminar Proyecto
-                </button>
-              </div>
+              <button
+                className="popup-button primary"
+                onClick={() => setIsEditing(true)}
+              >
+                Editar Proyecto
+              </button>
             )}
           </>
         )}
@@ -926,8 +823,6 @@ const Dashboard = () => {
                 setEditData={setEditData}
                 handleSaveEdit={handleSaveEdit}
                 handleInputChange={handleInputChange}
-                nextTaskNumber={nextTaskNumber}
-                setNextTaskNumber={setNextTaskNumber}
               />
             )}
           </div>
@@ -1005,6 +900,11 @@ const Dashboard = () => {
           handleCancelTeam={() => setShowTeamPopup(false)}
         />
       )}
+      {/* Popup de error */}
+      <ErrorPopup message={error} onClose={closeErrorPopup} />
+
+      {/* Popup de éxito */}
+      <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
 
       {/* Confirmación de eliminación de tarea */}
       {showDeleteConfirmation && taskToDelete && (
@@ -1047,46 +947,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      {showProjectDeleteConfirmation && (
-        <div
-          className="popup-overlay"
-          onClick={() => setShowProjectDeleteConfirmation(false)}
-        >
-          <div
-            className="popup-content confirmation-popup"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "400px", textAlign: "center" }}
-          >
-            <h3>Confirmar eliminación</h3>
-            <p>
-              ¿Estás seguro que deseas eliminar el proyecto? Esta acción no se
-              puede deshacer.
-            </p>
-            <div className="confirmation-actions">
-              <button
-                className="cancel-button"
-                onClick={() => setShowProjectDeleteConfirmation(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="delete-button"
-                id="project-delete-button"
-                disabled={countdown > 0}
-                onClick={confirmDeleteProject}
-              >
-                {countdown > 0 ? `Eliminar (${countdown})` : "Eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Popup de error */}
-      <ErrorPopup message={error} onClose={closeErrorPopup} />
-
-      {/* Popup de éxito */}
-      <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
     </div>
   );
 };
