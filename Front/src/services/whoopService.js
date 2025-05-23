@@ -3,8 +3,13 @@ import axios from 'axios';
 const WHOOP_CONFIG = {
     clientId: '4a7cd98e-1a62-45c4-ad24-59011db56b9f',
     clientSecret: 'a315fb94189d174a4ef205b479199c28e496d9fa575bed088d70911f0de0fb35',
-    redirectUri: 'http://localhost:5173/whoop-callback',
+    redirectUri: window.location.hostname === 'localhost' 
+        ? 'http://localhost:5173/whoop-callback'
+        : 'https://soft-edge-two.vercel.app/whoop-callback',
     apiBaseUrl: 'https://api.prod.whoop.com/developer/v1',
+    backendUrl: window.location.hostname === 'localhost'
+        ? 'http://localhost:5001'
+        : 'https://soft-edge-backend.vercel.app',
     scopes: [
         'read:sleep',
         'read:recovery',
@@ -54,7 +59,7 @@ class WhoopService {
     async handleAuthCallback(code) {
         try {
             console.log('Starting token exchange with code:', code);
-            const response = await axios.post('http://localhost:5001/whoop/token', { code });
+            const response = await axios.post(`${WHOOP_CONFIG.backendUrl}/whoop/token`, { code });
             console.log('Token exchange response:', response.data);
             
             const { access_token, refresh_token, expires_in } = response.data;
@@ -106,7 +111,7 @@ class WhoopService {
             }
 
             console.log('Attempting to refresh token');
-            const response = await axios.post('http://localhost:5001/whoop/refresh', {
+            const response = await axios.post(`${WHOOP_CONFIG.backendUrl}/whoop/refresh`, {
                 refresh_token: this.refreshToken
             });
             console.log('Token refresh response:', response.data);

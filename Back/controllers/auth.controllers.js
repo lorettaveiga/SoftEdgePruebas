@@ -110,7 +110,9 @@ export const exchangeWhoopToken = async (req, res) => {
         client_secret: 'a315fb94189d174a4ef205b479199c28e496d9fa575bed088d70911f0de0fb35',
         grant_type: 'authorization_code',
         code,
-        redirect_uri: 'http://localhost:5173/whoop-callback'
+        redirect_uri: req.headers.origin === 'http://localhost:5173' || req.headers.origin === 'https://soft-edge-two.vercel.app'
+          ? req.headers.origin + '/whoop-callback'
+          : 'https://soft-edge-two.vercel.app/whoop-callback'
       }),
       {
         headers: {
