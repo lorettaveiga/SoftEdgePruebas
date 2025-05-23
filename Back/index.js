@@ -27,13 +27,7 @@ app.use((req, res, next) => {
 // Middleware
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: "https://soft-edge-two.vercel.app",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -41,6 +35,10 @@ app.use(
     optionsSuccessStatus: 204
   })
 );
+
+// Add a specific handler for OPTIONS requests
+app.options('*', cors());
+
 app.use(morgan("dev"));
 app.use(express.json());
 
