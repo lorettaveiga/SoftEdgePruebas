@@ -605,13 +605,6 @@ const RenderRequirementsTab = ({ ...props }) => {
 
             {!showTaskForm ? (
               <div className="popup-footer">
-                {saveStatus.success && (
-                  <div className="save-success">¡Cambios guardados!</div>
-                )}
-                {saveStatus.error && (
-                  <div className="save-error">{saveStatus.error}</div>
-                )}
-
                 {editing ? (
                   <>
                     <button
