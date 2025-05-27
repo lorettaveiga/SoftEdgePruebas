@@ -227,11 +227,61 @@ const AvatarIA = () => {
   const handleReadMessage = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "es-MX"; // Set language to Spanish (Mexico)
-    const selectedVoice =
-      voices.find((voice) => voice.name.includes("Microsoft Sabina")) || voices[0];
+    
+    // Improved voice selection with multiple fallbacks for Spanish
+    let selectedVoice = null;
+    
+    // Priority order for Spanish voices
+    const spanishVoiceNames = [
+      "Microsoft Sabina", // Primary choice
+      "Microsoft Sabina Desktop", // Windows variant
+      "Sabina", // Short name variant
+      "Google español", // Google Spanish voice
+      "Paulina", // macOS Spanish voice
+      "Monica", // Another Spanish voice option
+      "Esperanza", // Windows Spanish voice
+      "spanish", // Generic Spanish identifier
+      "es-MX", // Language code match
+      "es-ES", // Spain Spanish as fallback
+      "es" // Any Spanish voice
+    ];
+    
+    // First, try to find exact matches
+    for (const voiceName of spanishVoiceNames) {
+      selectedVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes(voiceName.toLowerCase())
+      );
+      if (selectedVoice) break;
+    }
+    
+    // If no exact match, try to find any Spanish voice by language
+    if (!selectedVoice) {
+      selectedVoice = voices.find(voice => 
+        voice.lang && (
+          voice.lang.startsWith('es-') || 
+          voice.lang.toLowerCase().includes('spanish') ||
+          voice.lang.toLowerCase().includes('español')
+        )
+      );
+    }
+    
+    // Final fallback: use any available voice but ensure Spanish language
+    if (!selectedVoice && voices.length > 0) {
+      selectedVoice = voices[0];
+    }
+    
     if (selectedVoice) {
       utterance.voice = selectedVoice;
+      // Force Spanish language even if voice doesn't match
+      utterance.lang = selectedVoice.lang && selectedVoice.lang.startsWith('es-') 
+        ? selectedVoice.lang 
+        : "es-MX";
     }
+    
+    // Additional settings for consistent pronunciation
+    utterance.rate = 0.9; // Slightly slower for clarity
+    utterance.pitch = 1.0; // Normal pitch
+    utterance.volume = 1.0; // Full volume
 
     // isSpeaking ya está establecido en handleVoiceMessage
     
