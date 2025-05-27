@@ -12,6 +12,7 @@ const app = express();
 
 const allowedOrigins = [
   `http://localhost:5173`,
+  `http://localhost:5001`,
   "https://developer-dashboard.whoop.com",
   "https://soft-edge-two.vercel.app",
   "https://dialogflow.cloud.google.com",
