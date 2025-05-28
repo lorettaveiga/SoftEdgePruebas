@@ -340,7 +340,8 @@ const RenderRequirementsTab = ({ ...props }) => {
               {activeRequirement === "HU" && (
                 <div className="tasks-section">
                   <h4>Tareas relacionadas:</h4>
-                  {tasks[selectedItem.id] && tasks[selectedItem.id].length > 0 ? (
+                  {tasks[selectedItem.id] &&
+                  tasks[selectedItem.id].length > 0 ? (
                     <div className="tasks-table-container">
                       <table className="tasks-table">
                         <thead>
@@ -351,6 +352,7 @@ const RenderRequirementsTab = ({ ...props }) => {
                             <th>Descripción</th>
                             <th>Prioridad</th>
                             <th>Asignado</th>
+                            <th>Sprint</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -362,7 +364,9 @@ const RenderRequirementsTab = ({ ...props }) => {
 
                             return (
                               <tr
-                                style={{ cursor: editingTasks ? "default" : undefined }}
+                                style={{
+                                  cursor: editingTasks ? "default" : undefined,
+                                }}
                                 key={task.id}
                                 draggable={!deleteMode && !editingTasks}
                                 onDragStart={
@@ -387,7 +391,8 @@ const RenderRequirementsTab = ({ ...props }) => {
                                 }
                                 onDrop={
                                   !deleteMode && !editingTasks
-                                    ? (e) => handleDrop(e, index, selectedItem.id)
+                                    ? (e) =>
+                                        handleDrop(e, index, selectedItem.id)
                                     : null
                                 }
                                 onDragEnd={
@@ -586,6 +591,38 @@ const RenderRequirementsTab = ({ ...props }) => {
                                         </option>
                                       ))}
                                     </select>
+                                  )}
+                                </td>
+                                <td>
+                                  {editingTasks ? (
+                                    <input
+                                      type="number"
+                                      className="edit-input"
+                                      value={task.sprint ?? ""}
+                                      min={0}
+                                      max={project?.sprintNumber ?? 99}
+                                      onChange={(e) => {
+                                        let value = Number(e.target.value);
+                                        // Restringir el valor al rango de sprints del proyecto
+                                        if (
+                                          project &&
+                                          typeof project.sprintNumber ===
+                                            "number"
+                                        ) {
+                                          if (value > project.sprintNumber)
+                                            value = project.sprintNumber;
+                                          if (value < 0) value = 0;
+                                        }
+                                        handleTaskEditChange(
+                                          task.id,
+                                          "sprint",
+                                          value
+                                        );
+                                      }}
+                                      style={{ width: "60px" }}
+                                    />
+                                  ) : (
+                                    task.sprint ?? "N/A"
                                   )}
                                 </td>
                               </tr>
