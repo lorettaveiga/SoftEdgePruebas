@@ -10,6 +10,7 @@ import TeamEditPopup from "../components/TeamEditPopup";
 import ModificationHistory from "../components/ModificationHistory";
 import SprintDetails from "../components/SprintDetails";
 import "../css/Dashboard.css";
+import SprintMetrics from "../components/SprintMetrics";
 
 const Dashboard = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -88,6 +89,7 @@ const Dashboard = () => {
       ],
     },
   ]);
+
   const [tasks, setTasks] = useState([]); // Todas las tareas del proyecto
   const [selectedSprint, setSelectedSprint] = useState(null);
 
@@ -132,6 +134,13 @@ const Dashboard = () => {
   // Estado para manejar el número máximo de tareas
   const [nextTaskNumber, setNextTaskNumber] = useState(0);
 
+  useEffect(() => {
+    // Verificar que el usuario sea visitante
+    if (role == "user") {
+      setActiveTab("project-metrics");
+    }
+  }, []);
+
   // UseEffect para cargar el proyecto y los miembros del equipo
   useEffect(() => {
     const fetchData = async () => {
@@ -146,6 +155,7 @@ const Dashboard = () => {
     fetchData();
   }, [projectId]);
 
+  // UseEffect para manejar el mensaje de exito
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
@@ -175,6 +185,7 @@ const Dashboard = () => {
     }
   }, [showProjectDeleteConfirmation]);
 
+  // Función para cargar el proyecto desde la API
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -205,6 +216,7 @@ const Dashboard = () => {
     }
   };
 
+  // Cargar todas las tareas del proyecto al montar el componente
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -240,6 +252,7 @@ const Dashboard = () => {
     setSelectedSprint(null);
   };
 
+  // Función para obtener los usuarios disponibles que no son miembros del equipo
   const fetchAvailableUsers = async (projectMembers) => {
     try {
       const response = await fetch(`${BACKEND_URL}/users`, {
@@ -282,6 +295,7 @@ const Dashboard = () => {
     }
   };
 
+  // Función para obtener los miembros del equipo del proyecto
   const fetchTeamMembers = async () => {
     try {
       const response = await fetch(
@@ -324,6 +338,7 @@ const Dashboard = () => {
     }
   };
 
+  // Función para obtener todas las tareas del proyecto
   const fetchAllTasks = async () => {
     try {
       const resp = await fetch(
@@ -874,6 +889,8 @@ const Dashboard = () => {
     />
   );
 
+  const renderMetricsTab = () => <SprintMetrics />;
+
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);
     setShowProjectDeleteConfirmation(true);
@@ -1050,29 +1067,41 @@ const Dashboard = () => {
             ←
           </button>
           <div className="dashboard-tabs">
+            {(role == "admin" || role == "editor") && (
+              <>
+                <button
+                  className={`tab-button ${
+                    activeTab === "overview" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("overview")}
+                >
+                  Vista General
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "requirements" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("requirements")}
+                >
+                  Elementos
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "sprint-backlog" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("sprint-backlog")}
+                >
+                  Sprint Backlog
+                </button>
+              </>
+            )}
             <button
               className={`tab-button ${
-                activeTab === "overview" ? "active" : ""
+                activeTab === "project-metrics" ? "active" : ""
               }`}
-              onClick={() => setActiveTab("overview")}
+              onClick={() => setActiveTab("project-metrics")}
             >
-              Vista General
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "requirements" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("requirements")}
-            >
-              Elementos
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "sprint-backlog" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("sprint-backlog")}
-            >
-              Sprint Backlog
+              Métricas del Proyecto
             </button>
           </div>
 
@@ -1081,6 +1110,8 @@ const Dashboard = () => {
               ? renderOverviewTab()
               : activeTab === "requirements"
               ? renderRequirementsTab()
+              : activeTab === "project-metrics"
+              ? renderMetricsTab()
               : renderSprintBacklogTab()}
           </div>
         </div>
