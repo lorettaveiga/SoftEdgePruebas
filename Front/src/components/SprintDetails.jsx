@@ -1,8 +1,18 @@
 import React, { useState } from "react";
 import "../css/SprintDetails.css";
 
-const SprintDetails = ({ sprint, sprintTasks, onClose, setAllTasks, projectId }) => {
-  console.log("Props recibidas en SprintDetails:", { sprint, sprintTasks, projectId });
+const SprintDetails = ({
+  sprint,
+  sprintTasks,
+  onClose,
+  setAllTasks,
+  projectId,
+}) => {
+  console.log("Props recibidas en SprintDetails:", {
+    sprint,
+    sprintTasks,
+    projectId,
+  });
   const [draggedTask, setDraggedTask] = useState(null);
 
   // Manejar el inicio del arrastre de una tarea
@@ -25,13 +35,13 @@ const SprintDetails = ({ sprint, sprintTasks, onClose, setAllTasks, projectId })
         console.error("El ID del proyecto no está definido");
         return;
       }
-  
+
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("No token found. Please log in.");
         return;
       }
-  
+
       try {
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/projectsFB/${projectId}/tasks`,
@@ -47,34 +57,37 @@ const SprintDetails = ({ sprint, sprintTasks, onClose, setAllTasks, projectId })
             }),
           }
         );
-  
+
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("Error al actualizar la tarea en Firestore:", errorData);
+          console.error(
+            "Error al actualizar la tarea en Firestore:",
+            errorData
+          );
           return;
         }
-  
+
         // Actualizar el estado local después de una solicitud exitosa
         setAllTasks((prevTasks) =>
           prevTasks.map((task) =>
             task.id === draggedTask.id ? { ...task, estado: newStatus } : task
           )
         );
-  
+
         console.log("Tarea actualizada correctamente en el frontend");
       } catch (error) {
         console.error("Error al conectar con Firestore:", error);
       }
-  
+
       setDraggedTask(null);
     }
   };
 
   // Filtrar las tareas por estado
-  const getTasksByStatus = (status) => {
-    return sprintTasks.filter((task) => task.estado === status);
+  const getTasksByStatus = (estado) => {
+    return sprintTasks.filter((task) => task.estado === estado);
   };
-  
+
   // Calcular el progreso del sprint
   const calculateProgress = () => {
     const completedTasks = sprintTasks.filter(

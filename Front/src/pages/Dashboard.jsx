@@ -41,37 +41,37 @@ const Dashboard = () => {
   const [sprints, setSprints] = useState([
     {
       number: 1,
-      status: "En progreso",
+      status: "Completado",
       startDate: "2024-04-01",
       endDate: "2024-04-14",
       tasks: [
         {
           title: "Implementar autenticación",
           description: "Crear sistema de login y registro",
-          status: "En progreso",
+          estado: "Completado",
         },
         {
           title: "Diseñar interfaz de usuario",
           description: "Crear wireframes y mockups",
-          status: "Completado",
+          estado: "Completado",
         },
       ],
     },
     {
       number: 2,
-      status: "Planificado",
+      status: "En progreso",
       startDate: "2024-04-15",
       endDate: "2024-04-28",
       tasks: [
         {
           title: "Desarrollar API",
           description: "Implementar endpoints principales",
-          status: "Pendiente",
+          estado: "Completado",
         },
         {
           title: "Configurar base de datos",
           description: "Crear esquema y migraciones",
-          status: "Pendiente",
+          estado: "En progreso",
         },
       ],
     },
@@ -84,7 +84,7 @@ const Dashboard = () => {
         {
           title: "Pruebas de integración",
           description: "Realizar pruebas de sistema completo",
-          status: "Pendiente",
+          estado: "Pendiente",
         },
       ],
     },
@@ -890,7 +890,9 @@ const Dashboard = () => {
     />
   );
 
-  const renderMetricsTab = () => <ProjectMetrics />;
+  const renderMetricsTab = () => (
+    <ProjectMetrics tasks={allTasks} sprints={sprints} />
+  );
 
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);
