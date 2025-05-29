@@ -62,6 +62,7 @@ export const getProject = async (req, res) => {
       RNF: project.data().RNF,
       fechaCreacion: project.data().fechaCreacion,
       modificationHistory: project.data().modificationHistory || [],
+      sprintNumber: project.data().sprintNumber || 0,
     });
   } catch (err) {
     console.error("Firebase Error:", err);
@@ -449,7 +450,9 @@ export const updateTasks = async (req, res) => {
     // Actualiza el proyecto en Firestore
     await projectRef.update(projectData);
 
-    res.status(200).json({ message: "Estado de la tarea actualizado correctamente" });
+    res
+      .status(200)
+      .json({ message: "Estado de la tarea actualizado correctamente" });
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
     res.status(500).json({ message: "Error al actualizar la tarea" });
@@ -575,7 +578,8 @@ export const updateTaskStatus = async (req, res) => {
   // Validar que todos los datos necesarios estén presentes
   if (!projectId || !requirementType || !elementId || !taskId || !estado) {
     return res.status(400).json({
-      message: "projectId, requirementType, elementId, taskId y estado son requeridos",
+      message:
+        "projectId, requirementType, elementId, taskId y estado son requeridos",
     });
   }
 
@@ -593,7 +597,9 @@ export const updateTaskStatus = async (req, res) => {
     // Obtener la sección correspondiente (EP, RF, RNF, HU)
     const section = projectData[requirementType];
     if (!Array.isArray(section)) {
-      return res.status(400).json({ message: "Tipo de requerimiento inválido" });
+      return res
+        .status(400)
+        .json({ message: "Tipo de requerimiento inválido" });
     }
 
     // Encontrar el elemento dentro de la sección
@@ -623,6 +629,8 @@ export const updateTaskStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al actualizar el estado de la tarea:", error);
-    res.status(500).json({ message: "Error al actualizar el estado de la tarea" });
+    res
+      .status(500)
+      .json({ message: "Error al actualizar el estado de la tarea" });
   }
 };

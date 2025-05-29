@@ -128,10 +128,11 @@ const RenderRequirementsTab = ({ ...props }) => {
           prioridad: t.priority,
           asignados:
             teamMembers.find((m) => m.email === t.assignee)?.id || null,
+          sprint: t.sprint,
         })),
       };
       await fetch(`${BACKEND_URL}/projectsFB/${project.id}/tasks`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -598,25 +599,41 @@ const RenderRequirementsTab = ({ ...props }) => {
                                     <input
                                       type="number"
                                       className="edit-input"
-                                      value={task.sprint ?? ""}
+                                      value={
+                                        task.sprint === undefined ||
+                                        task.sprint === null
+                                          ? ""
+                                          : task.sprint
+                                      }
                                       min={0}
                                       max={project?.sprintNumber ?? 99}
                                       onChange={(e) => {
-                                        let value = Number(e.target.value);
+                                        // Validar que el valor sea un número
+                                        let value = e.target.value;
+                                        if (value === "") {
+                                          handleTaskEditChange(
+                                            task.id,
+                                            "sprint",
+                                            "N/A"
+                                          );
+                                          return;
+                                        }
+                                        let num = Number(value);
+                                        if (isNaN(num)) return;
                                         // Restringir el valor al rango de sprints del proyecto
                                         if (
                                           project &&
                                           typeof project.sprintNumber ===
                                             "number"
                                         ) {
-                                          if (value > project.sprintNumber)
-                                            value = project.sprintNumber;
-                                          if (value < 0) value = 0;
+                                          if (num > project.sprintNumber)
+                                            num = project.sprintNumber;
+                                          if (num < 0) value = 0;
                                         }
                                         handleTaskEditChange(
                                           task.id,
                                           "sprint",
-                                          value
+                                          num
                                         );
                                       }}
                                       style={{ width: "60px" }}

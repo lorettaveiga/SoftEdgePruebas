@@ -10,7 +10,7 @@ import TeamEditPopup from "../components/TeamEditPopup";
 import ModificationHistory from "../components/ModificationHistory";
 import SprintDetails from "../components/SprintDetails";
 import "../css/Dashboard.css";
-import SprintMetrics from "../components/SprintMetrics";
+import ProjectMetrics from "../components/ProjectMetrics";
 
 const Dashboard = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -509,6 +509,7 @@ const Dashboard = () => {
           description: t.descripcion,
           priority: t.prioridad,
           assignee: teamMembers.find((m) => m.id === t.asignados)?.email || "",
+          sprint: t.sprint,
         };
       });
       setTasks((prev) => ({ ...prev, [item.id]: mapped }));
@@ -889,7 +890,7 @@ const Dashboard = () => {
     />
   );
 
-  const renderMetricsTab = () => <SprintMetrics />;
+  const renderMetricsTab = () => <ProjectMetrics />;
 
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);
