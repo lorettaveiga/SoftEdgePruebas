@@ -36,59 +36,51 @@ const Dashboard = () => {
     error: null,
     success: false,
   });
+  const [sprints, setSprints] = useState([]);
+  const [sprintDuration, setSprintDuration] = useState(2); // Default 2 weeks
 
-  // Sprint backlog states
-  const [sprints, setSprints] = useState([
-    {
-      number: 1,
-      status: "Completado",
-      startDate: "2024-04-01",
-      endDate: "2024-04-14",
-      tasks: [
-        {
-          title: "Implementar autenticación",
-          description: "Crear sistema de login y registro",
-          estado: "Completado",
-        },
-        {
-          title: "Diseñar interfaz de usuario",
-          description: "Crear wireframes y mockups",
-          estado: "Completado",
-        },
-      ],
-    },
-    {
-      number: 2,
-      status: "En progreso",
-      startDate: "2024-04-15",
-      endDate: "2024-04-28",
-      tasks: [
-        {
-          title: "Desarrollar API",
-          description: "Implementar endpoints principales",
-          estado: "Completado",
-        },
-        {
-          title: "Configurar base de datos",
-          description: "Crear esquema y migraciones",
-          estado: "En progreso",
-        },
-      ],
-    },
-    {
-      number: 3,
-      status: "Pendiente",
-      startDate: "2024-04-29",
-      endDate: "2024-05-12",
-      tasks: [
-        {
-          title: "Pruebas de integración",
-          description: "Realizar pruebas de sistema completo",
-          estado: "Pendiente",
-        },
-      ],
-    },
-  ]);
+  // Función para generar sprints dinámicamente
+  const generateSprints = (sprintNumber, projectTasks = [], duration = 2, projectCreatedAt = null) => {
+    const sprints = [];
+    const durationDays = duration * 7; // Convert weeks to days
+    
+    for (let i = 1; i <= sprintNumber; i++) {
+      const startDate = new Date(projectCreatedAt || new Date());
+      startDate.setDate(startDate.getDate() + (i - 1) * durationDays);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + durationDays - 1);
+
+      // Determinar status del sprint
+      let status;
+      if (i === 1) {
+        status = "En progreso";
+      } else if (i === 2 && sprintNumber > 1) {
+        status = "Planificado";
+      } else {
+        status = "Pendiente";
+      }
+
+      // Filtrar tareas para este sprint específico
+      const sprintTasks = projectTasks.filter(
+        (task) => parseInt(task.sprint, 10) === i
+      ).map((task) => ({
+        title: task.titulo,
+        description: task.descripcion,
+        estado: task.estado,
+        priority: task.prioridad,
+        assignee: task.asignado,
+      }));
+
+      sprints.push({
+        number: i,
+        status: status,
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+        tasks: sprintTasks,
+      });
+    }
+    return sprints;
+  };
 
   const [tasks, setTasks] = useState([]); // Todas las tareas del proyecto
   const [selectedSprint, setSelectedSprint] = useState(null);
@@ -210,6 +202,42 @@ const Dashboard = () => {
         nombreProyecto: data.nombreProyecto,
         descripcion: data.descripcion,
       });
+
+      // Set sprint duration from project data
+      setSprintDuration(data.sprintDuration || 2);
+
+      // Fetch all tasks and generate sprints
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        // Generar sprints dinámicamente basado en sprintNumber del proyecto
+        const sprintNumber = data.sprintNumber || 3;
+        const duration = data.sprintDuration || 2;
+        const generatedSprints = generateSprints(sprintNumber, allTasks, duration, data.fechaCreacion);
+        setSprints(generatedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        // Si falla al cargar tareas, generar sprints sin tareas
+        const sprintNumber = data.sprintNumber || 3;
+        const duration = data.sprintDuration || 2;
+        const generatedSprints = generateSprints(sprintNumber, [], duration, data.fechaCreacion);
+        setSprints(generatedSprints);
+      }
     } catch (error) {
       setError("Error al cargar el proyecto. Por favor, inténtalo de nuevo.");
       console.error("Error fetching project:", error);
@@ -798,52 +826,93 @@ const Dashboard = () => {
   };
 
   const renderSprintBacklogTab = () => (
-    <div className="sprints-grid">
-      {sprints.length > 0 ? (
-        sprints.map((sprint, index) => (
-          <div
-            key={index}
-            className="sprint-card"
-            onClick={() => handleSprintClick(sprint)}
-          >
-            <h3 className="sprint-title">SPRINT {sprint.number}</h3>
-            <div className="sprint-status-container">
-              <span
-                className={`status-badge ${sprint.status
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")}`}
-              >
-                {sprint.status}
-              </span>
+    <div>
+      <div className="sprints-grid">
+        {sprints.length > 0 ? (
+          sprints.map((sprint, index) => (
+            <div
+              key={index}
+              className="sprint-card"
+              onClick={() => handleSprintClick(sprint)}
+            >
+              <h3 className="sprint-title">SPRINT {sprint.number}</h3>
+              <div className="sprint-status-container">
+                <span
+                  className={`status-badge ${sprint.status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                >
+                  {sprint.status}
+                </span>
+              </div>
+              <div className="sprint-dates">
+                <div className="date-item">
+                  <span className="calendar-icon">📅</span>
+                  <span className="date-text">
+                    {new Date(sprint.startDate).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="date-separator">→</div>
+                <div className="date-item">
+                  <span className="calendar-icon">📅</span>
+                  <span className="date-text">
+                    {new Date(sprint.endDate).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="sprint-dates">
-              <div className="date-item">
-                <span className="calendar-icon">📅</span>
-                <span className="date-text">
-                  {new Date(sprint.startDate).toLocaleDateString("es-ES", {
+          ))
+        ) : (
+          <div className="no-sprints">
+            <p>No hay sprints disponibles</p>
+          </div>
+        )}
+      </div>
+
+      {/* Sprint Configuration Section - Only for Admins */}
+      {role === "admin" && (
+        <div className="sprint-configuration-section">
+          <h3>Configuración de Sprints</h3>
+          <div className="sprint-config-content">
+            <div className="config-option">
+              <label htmlFor="sprint-duration">Duración del Sprint:</label>
+              <select
+                id="sprint-duration"
+                value={sprintDuration}
+                onChange={(e) => handleSprintDurationChange(parseInt(e.target.value))}
+                className="sprint-duration-select"
+              >
+                <option value={1}>1 semana</option>
+                <option value={2}>2 semanas</option>
+                <option value={3}>3 semanas</option>
+                <option value={4}>4 semanas</option>
+              </select>
+            </div>
+            <div className="config-info">
+              <p>
+                <strong>Información:</strong> Cambiar la duración afectará las fechas de todos los sprints. 
+                El primer sprint siempre comenzará en la fecha de creación del proyecto.
+              </p>
+              {project.fechaCreacion && (
+                <p>
+                  <strong>Fecha de creación del proyecto:</strong> {" "}
+                  {new Date(project.fechaCreacion).toLocaleDateString("es-ES", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
                   })}
-                </span>
-              </div>
-              <div className="date-separator">→</div>
-              <div className="date-item">
-                <span className="calendar-icon">📅</span>
-                <span className="date-text">
-                  {new Date(sprint.endDate).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
+                </p>
+              )}
             </div>
           </div>
-        ))
-      ) : (
-        <div className="no-sprints">
-          <p>No hay sprints disponibles</p>
         </div>
       )}
     </div>
@@ -893,6 +962,89 @@ const Dashboard = () => {
   const renderMetricsTab = () => (
     <ProjectMetrics tasks={allTasks} sprints={sprints} />
   );
+
+  // Función para actualizar la duración de los sprints
+  const handleSprintDurationChange = async (newDuration) => {
+    try {
+      // Only send the fields that need to be updated
+      const updateData = {
+        nombreProyecto: project.nombreProyecto,
+        descripcion: project.descripcion,
+        sprintNumber: project.sprintNumber,
+        sprintDuration: newDuration,
+        estatus: project.estatus,
+        fechaCreacion: project.fechaCreacion,
+        // Include all the existing arrays
+        EP: project.EP || [],
+        RF: project.RF || [],
+        RNF: project.RNF || [],
+        HU: project.HU || []
+      };
+
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        // Try to parse JSON, but handle cases where it might not be JSON
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON, use the response text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Update local state
+      const updatedProject = { ...project, sprintDuration: newDuration };
+      setProject(updatedProject);
+      setSprintDuration(newDuration);
+
+      // Regenerar sprints con nueva duración
+      const sprintNumber = project.sprintNumber || 3;
+      
+      // Fetch tasks again to ensure we have current data
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(sprintNumber, allTasks, newDuration, project.fechaCreacion);
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(sprintNumber, [], newDuration, project.fechaCreacion);
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Duración de sprints actualizada exitosamente.");
+    } catch (error) {
+      console.error("Error updating sprint duration:", error);
+      setError(`Error al actualizar la duración de los sprints`);
+    }
+  };
 
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);

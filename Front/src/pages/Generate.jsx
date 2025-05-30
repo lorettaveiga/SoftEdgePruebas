@@ -19,6 +19,7 @@ function Generate() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [sprints, setSprints] = useState(1);
+  const [sprintDuration, setSprintDuration] = useState(2); // Add sprint duration state
   const [copyButtonText, setCopyButtonText] = useState("Copiar");
   const [pasteButtonText, setPasteButtonText] = useState("Pegar");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -45,6 +46,7 @@ function Generate() {
    "nombreProyecto": "Nombre del proyecto",
    "descripcion": "Breve descripción del proyecto",
    "sprintNumber": ${sprints},
+   "sprintDuration": ${sprintDuration},
    "estatus": "Abierto" or "Cerrado",
    "EP": [
      {
@@ -96,6 +98,7 @@ function Generate() {
  Each user story should have ${tasksPerStory} tasks.
  Tasks should be meaningful and cover all acceptance criteria.
  You MUST include the 'sprintNumber' for the generated project (value: ${sprints}).
+ You MUST include the 'sprintDuration' for the generated project (value: ${sprintDuration} weeks).
  Task IDs should be unique within the project (format: T01, T02, etc.).
  Distribute tasks evenly across ${sprints} sprints.
  Do not include \`\`\`json or \`\`\` markers in the response.
@@ -116,6 +119,7 @@ function Generate() {
           prompt, 
           rules: promptRules, 
           sprints, 
+          sprintDuration,
           limit,
           tasksPerStory 
         }),
@@ -316,6 +320,20 @@ function Generate() {
                   min={1}
                   max={10}
                 />
+              </div>
+
+              <div className="option-group">
+                <span className="option-label">Duración del Sprint</span>
+                <select
+                  className="option-select"
+                  value={sprintDuration}
+                  onChange={(e) => setSprintDuration(parseInt(e.target.value))}
+                >
+                  <option value={1}>1 semana</option>
+                  <option value={2}>2 semanas</option>
+                  <option value={3}>3 semanas</option>
+                  <option value={4}>4 semanas</option>
+                </select>
               </div>
 
               <div className="option-group">

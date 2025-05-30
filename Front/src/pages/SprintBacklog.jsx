@@ -7,10 +7,8 @@ import TopAppBar from "../components/TopAppBar";
 import SprintDetails from "../components/SprintDetails";
 import "../css/SprintBacklog.css";
 
-const statuses = ["To-Do", "In Progress", "Done"];
-
 const SprintBacklog = () => {
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // URL del backend
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const { projectId } = useParams();
   console.log("Project ID desde useParams:", projectId);
   const navigate = useNavigate();
@@ -20,62 +18,48 @@ const SprintBacklog = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
-  const [sprints, setSprints] = useState([
-    {
-      number: 1,
-      status: "En progreso",
-      startDate: "2024-04-01",
-      endDate: "2024-04-14",
-      tasks: [
-        {
-          title: "Implementar autenticación",
-          description: "Crear sistema de login y registro",
-          status: "En progreso",
-        },
-        {
-          title: "Diseñar interfaz de usuario",
-          description: "Crear wireframes y mockups",
-          status: "Completado",
-        },
-      ],
-    },
-    {
-      number: 2,
-      status: "Planificado",
-      startDate: "2024-04-15",
-      endDate: "2024-04-28",
-      tasks: [
-        {
-          title: "Desarrollar API",
-          description: "Implementar endpoints principales",
-          status: "Pendiente",
-        },
-        {
-          title: "Configurar base de datos",
-          description: "Crear esquema y migraciones",
-          status: "Pendiente",
-        },
-      ],
-    },
-    {
-      number: 3,
-      status: "Pendiente",
-      startDate: "2024-04-29",
-      endDate: "2024-05-12",
-      tasks: [
-        {
-          title: "Pruebas de integración",
-          description: "Realizar pruebas de sistema completo",
-          status: "Pendiente",
-        },
-      ],
-    },
-  ]);
+  const [sprints, setSprints] = useState([]);
+
+  // Función para generar sprints dinámicamente
+  const generateSprints = (sprintNumber, projectTasks = []) => {
+    const sprints = [];
+    for (let i = 1; i <= sprintNumber; i++) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + (i - 1) * 14); // 2 semanas por sprint
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 13); // Sprint de 2 semanas
+
+      // Determinar status del sprint
+      let status;
+      if (i === 1) {
+        status = "En progreso";
+      } else if (i === 2 && sprintNumber > 1) {
+        status = "Planificado";
+      } else {
+        status = "Pendiente";
+      }
+
+      // Filtrar tareas para este sprint específico
+      const sprintTasks = projectTasks.filter(
+        (task) => parseInt(task.sprint, 10) === i
+      );
+
+      sprints.push({
+        number: i,
+        status: status,
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+        tasks: sprintTasks,
+      });
+    }
+    return sprints;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch project data
         const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
           method: "GET",
           headers: {
@@ -87,8 +71,29 @@ const SprintBacklog = () => {
         const data = await response.json();
         console.log("Project data:", data);
         setProject(data);
-        // Commenting out the sprints setting for now to use our fixed data
-        // setSprints(data.sprints || []);
+
+        // Fetch all tasks
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        // Generar sprints dinámicamente basado en sprintNumber del proyecto
+        const sprintNumber = data.sprintNumber || 3; // Default a 3 si no existe
+        const generatedSprints = generateSprints(sprintNumber, allTasks);
+        setSprints(generatedSprints);
       } catch (error) {
         setError("Error al cargar el proyecto. Por favor, inténtalo de nuevo.");
         console.error("Error fetching project:", error);
@@ -183,10 +188,11 @@ const SprintBacklog = () => {
                     <div className="date-item">
                       <span className="calendar-icon">📅</span>
                       <span className="date-text">
-                        {new Date(sprint.startDate).toLocaleDateString(
-                          "es-ES",
-                          { day: "2-digit", month: "2-digit", year: "numeric" }
-                        )}
+                        {new Date(sprint.startDate).toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
                       </span>
                     </div>
                     <div className="date-separator">→</div>

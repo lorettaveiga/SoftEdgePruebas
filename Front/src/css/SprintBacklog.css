@@ -54,31 +54,41 @@
   
   .error {
     color: #d32f2f;
-  }.sprints-grid {
+  }
+  /* Sprint Backlog Styles */
+.sprints-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   padding: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .sprint-card {
-  background-color: #ffffff;
-  border-radius: 12px;
+  background-color: white;
+  border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .sprint-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.sprint-title {
-  color: #5d3a7f;
-  margin-bottom: 15px;
-  font-size: 1.2rem;
+.sprint-card h3.sprint-title {
+  color: #5d3a7f !important;
+  font-size: 20px;
   font-weight: 600;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #5d3a7f;
+  padding-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .sprint-status-container {
@@ -89,132 +99,133 @@
   display: inline-block;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 14px;
   font-weight: 500;
-  text-transform: capitalize;
+  color: #333;
 }
 
 .status-badge.en-progreso {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: #f1c6ff;
 }
 
 .status-badge.planificado {
-  background-color: #cce5ff;
-  color: #004085;
+  background-color: #c6d1ff;
 }
 
 .status-badge.pendiente {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.status-badge.completado {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: #fdbcbc;
 }
 
 .sprint-dates {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
 }
 
 .date-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
 .calendar-icon {
-  font-size: 1.2rem;
+  font-size: 16px;
+  color: #b388ff;
 }
 
 .date-text {
-  font-size: 0.9rem;
+  font-size: 14px;
   color: #666;
 }
 
 .date-separator {
-  color: #9e72be;
+  color: #b388ff;
   font-weight: bold;
+  margin: 0 5px;
 }
 
 .sprint-tasks {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
 }
 
 .sprint-task {
-  background-color: #f8f9fa;
-  padding: 15px;
+  background-color: #fde7ff3f;
   border-radius: 8px;
-  border-left: 4px solid #9e72be;
+  padding: 12px;
+  margin-bottom: 10px;
 }
 
 .sprint-task h4 {
   color: #333;
-  margin-bottom: 8px;
-  font-size: 1rem;
+  font-size: 14px;
+  margin-bottom: 5px;
 }
 
 .sprint-task p {
   color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
 .task-status-badge {
   display: inline-block;
   padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.8rem;
+  font-size: 12px;
   font-weight: 500;
+  color: #333;
 }
 
 .task-status-badge.en-progreso {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: #f1c6ff;
 }
 
 .task-status-badge.completado {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: #c0fbc5;
 }
 
 .task-status-badge.pendiente {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #fdbcbc;
 }
 
 .no-sprints {
   text-align: center;
   padding: 40px;
   color: #666;
-  font-style: italic;
+  font-size: 16px;
+  background-color: #f3e5ff;
+  border-radius: 8px;
+  grid-column: 1 / -1;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .sprints-grid {
     grid-template-columns: 1fr;
+    padding: 10px;
+    max-width: 100%;
   }
-  
+
   .sprint-card {
     padding: 15px;
   }
-  
-  .sprint-dates {
-    flex-direction: column;
-    align-items: flex-start;
+}
+
+@media (min-width: 1200px) {
+  .sprints-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1200px;
   }
-  
-  .date-separator {
-    display: none;
+}
+
+@media (min-width: 1600px) {
+  .sprints-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1400px;
   }
-} 
+}

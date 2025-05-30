@@ -66,6 +66,7 @@ function RevisionIA() {
       fechaCreacion:
         data.fechaCreacion || new Date().toISOString().split("T")[0],
       sprintNumber: data.sprintNumber || 0,
+      sprintDuration: data.sprintDuration || 2,
       EP: parseSection(data.EP || data.epics),
       RF: parseSection(data.RF || data.functionalRequirements),
       RNF: parseSection(data.RNF || data.nonFunctionalRequirements),
