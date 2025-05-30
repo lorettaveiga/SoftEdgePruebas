@@ -63,6 +63,7 @@ export const getProject = async (req, res) => {
       fechaCreacion: project.data().fechaCreacion,
       modificationHistory: project.data().modificationHistory || [],
       sprintNumber: project.data().sprintNumber || 0,
+      sprintDuration: project.data().sprintDuration || 2,
     });
   } catch (err) {
     console.error("Firebase Error:", err);

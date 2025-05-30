@@ -19,15 +19,23 @@ const SprintBacklog = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [sprints, setSprints] = useState([]);
+  const [sprintDuration, setSprintDuration] = useState(2); // Add this state
 
   // Función para generar sprints dinámicamente
-  const generateSprints = (sprintNumber, projectTasks = []) => {
+  const generateSprints = (
+    sprintNumber,
+    projectTasks = [],
+    duration = 2,
+    projectCreatedAt = null
+  ) => {
     const sprints = [];
+    const durationDays = duration * 7; // Convert weeks to days
+
     for (let i = 1; i <= sprintNumber; i++) {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() + (i - 1) * 14); // 2 semanas por sprint
+      const startDate = new Date(projectCreatedAt || new Date());
+      startDate.setDate(startDate.getDate() + (i - 1) * durationDays);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 13); // Sprint de 2 semanas
+      endDate.setDate(endDate.getDate() + durationDays - 1);
 
       // Determinar status del sprint
       let status;
@@ -40,9 +48,15 @@ const SprintBacklog = () => {
       }
 
       // Filtrar tareas para este sprint específico
-      const sprintTasks = projectTasks.filter(
-        (task) => parseInt(task.sprint, 10) === i
-      );
+      const sprintTasks = projectTasks
+        .filter((task) => parseInt(task.sprint, 10) === i)
+        .map((task) => ({
+          title: task.titulo || task.title,
+          description: task.descripcion || task.description,
+          estado: task.estado || 'Pendiente',
+          priority: task.prioridad || task.priority,
+          assignee: task.asignado || task.assignee,
+        }));
 
       sprints.push({
         number: i,
@@ -72,6 +86,11 @@ const SprintBacklog = () => {
         console.log("Project data:", data);
         setProject(data);
 
+        // Set sprint duration from project data - this ensures we always use DB values
+        const projectSprintDuration = data.sprintDuration || 2;
+        setSprintDuration(projectSprintDuration);
+        console.log("Sprint duration from DB:", projectSprintDuration);
+
         // Fetch all tasks
         const tasksResponse = await fetch(
           `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
@@ -88,11 +107,22 @@ const SprintBacklog = () => {
         if (tasksResponse.ok) {
           const tasksData = await tasksResponse.json();
           allTasks = tasksData.tasks || [];
+          console.log("Tasks from DB:", allTasks);
         }
 
-        // Generar sprints dinámicamente basado en sprintNumber del proyecto
-        const sprintNumber = data.sprintNumber || 3; // Default a 3 si no existe
-        const generatedSprints = generateSprints(sprintNumber, allTasks);
+        // Generate sprints using the actual duration and creation date from DB
+        const sprintNumber = data.sprintNumber || 3;
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          projectSprintDuration,
+          data.fechaCreacion
+        );
+        console.log(
+          "Generated sprints with duration:",
+          projectSprintDuration,
+          generatedSprints
+        );
         setSprints(generatedSprints);
       } catch (error) {
         setError("Error al cargar el proyecto. Por favor, inténtalo de nuevo.");
@@ -101,7 +131,9 @@ const SprintBacklog = () => {
       setLoading(false);
     };
 
-    fetchData();
+    if (projectId) {
+      fetchData();
+    }
   }, [projectId]);
 
   const handleSprintClick = (sprint) => {
@@ -213,11 +245,11 @@ const SprintBacklog = () => {
                         <h4>{task.title}</h4>
                         <p>{task.description}</p>
                         <span
-                          className={`task-status-badge ${task.status
+                          className={`task-status-badge ${(task.estado || 'pendiente')
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`}
                         >
-                          {task.status}
+                          {task.estado || 'Pendiente'}
                         </span>
                       </div>
                     ))}
@@ -232,17 +264,14 @@ const SprintBacklog = () => {
           </div>
         </div>
       </div>
-      console.log("Valor de selectedSprint:", selectedSprint);
 
       {selectedSprint && (
-        console.log("Project ID en SprintBacklog:", projectId),
-
         <SprintDetails
           sprint={selectedSprint}
           sprintTasks={selectedSprint?.tasks || []}
           onClose={handleCloseSprintDetails}
           setAllTasks={setSprints}
-          projectId={projectId} // Pasa el projectId aquí
+          projectId={projectId}
         />
       )}
 

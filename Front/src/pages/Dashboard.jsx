@@ -45,10 +45,12 @@ const Dashboard = () => {
     const durationDays = duration * 7; // Convert weeks to days
     
     for (let i = 1; i <= sprintNumber; i++) {
+      // Crear fecha en UTC para evitar problemas de zona horaria
       const startDate = new Date(projectCreatedAt || new Date());
-      startDate.setDate(startDate.getDate() + (i - 1) * durationDays);
+      // Usar métodos UTC para todos los cálculos de fechas
+      startDate.setUTCDate(startDate.getUTCDate() + (i - 1) * durationDays);
       const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + durationDays - 1);
+      endDate.setUTCDate(endDate.getUTCDate() + durationDays - 1);
 
       // Determinar status del sprint
       let status;
@@ -64,16 +66,17 @@ const Dashboard = () => {
       const sprintTasks = projectTasks.filter(
         (task) => parseInt(task.sprint, 10) === i
       ).map((task) => ({
-        title: task.titulo,
-        description: task.descripcion,
-        estado: task.estado,
-        priority: task.prioridad,
-        assignee: task.asignado,
+        title: task.titulo || task.title,
+        description: task.descripcion || task.description,
+        estado: task.estado || 'Pendiente',
+        priority: task.prioridad || task.priority,
+        assignee: task.asignado || task.assignee,
       }));
 
       sprints.push({
         number: i,
         status: status,
+        // Usar toISOString().split("T")[0] para mantener formato UTC
         startDate: startDate.toISOString().split("T")[0],
         endDate: endDate.toISOString().split("T")[0],
         tasks: sprintTasks,
@@ -825,6 +828,29 @@ const Dashboard = () => {
     }
   };
 
+  // Función auxiliar para formatear fechas usando UTC
+  const formatDateWithoutTimezone = (dateString) => {
+    if (!dateString) return '';
+    
+    // Si la fecha ya está en formato YYYY-MM-DD, parsearla como UTC
+    if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const dateParts = dateString.split('-');
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]);
+      const day = parseInt(dateParts[2]);
+      
+      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    }
+    
+    // Para fechas de Firebase o fechas completas, crear objeto Date y usar UTC
+    const date = new Date(dateString);
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    
+    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+  };
+
   const renderSprintBacklogTab = () => (
     <div>
       <div className="sprints-grid">
@@ -849,22 +875,14 @@ const Dashboard = () => {
                 <div className="date-item">
                   <span className="calendar-icon">📅</span>
                   <span className="date-text">
-                    {new Date(sprint.startDate).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateWithoutTimezone(sprint.startDate)}
                   </span>
                 </div>
                 <div className="date-separator">→</div>
                 <div className="date-item">
                   <span className="calendar-icon">📅</span>
                   <span className="date-text">
-                    {new Date(sprint.endDate).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateWithoutTimezone(sprint.endDate)}
                   </span>
                 </div>
               </div>
@@ -898,17 +916,12 @@ const Dashboard = () => {
             </div>
             <div className="config-info">
               <p>
-                <strong>Información:</strong> Cambiar la duración afectará las fechas de todos los sprints. 
-                El primer sprint siempre comenzará en la fecha de creación del proyecto.
+                <strong>Información:</strong> Cambiar la duración afectará las fechas de todos los sprints.
               </p>
               {project.fechaCreacion && (
                 <p>
                   <strong>Fecha de creación del proyecto:</strong> {" "}
-                  {new Date(project.fechaCreacion).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
+                  {formatDateWithoutTimezone(project.fechaCreacion)}
                 </p>
               )}
             </div>
@@ -962,6 +975,34 @@ const Dashboard = () => {
   const renderMetricsTab = () => (
     <ProjectMetrics tasks={allTasks} sprints={sprints} />
   );
+
+  // Add function to refresh sprints when duration changes
+  const refreshSprintsAfterDurationChange = async (newDuration) => {
+    try {
+      const tasksResponse = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      let allTasks = [];
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        allTasks = tasksData.tasks || [];
+      }
+
+      const sprintNumber = project.sprintNumber || 3;
+      const regeneratedSprints = generateSprints(sprintNumber, allTasks, newDuration, project.fechaCreacion);
+      setSprints(regeneratedSprints);
+    } catch (error) {
+      console.error("Error refreshing sprints:", error);
+    }
+  };
 
   // Función para actualizar la duración de los sprints
   const handleSprintDurationChange = async (newDuration) => {
@@ -1040,6 +1081,9 @@ const Dashboard = () => {
       }
 
       setSuccessMessage("Duración de sprints actualizada exitosamente.");
+      
+      // Refresh sprints after successful update
+      await refreshSprintsAfterDurationChange(newDuration);
     } catch (error) {
       console.error("Error updating sprint duration:", error);
       setError(`Error al actualizar la duración de los sprints`);
@@ -1071,7 +1115,7 @@ const Dashboard = () => {
       console.error("Error deleting project:", error);
       setError("Error al eliminar el proyecto. Por favor, inténtalo de nuevo.");
     } finally {
-      sethShowProjectDeleteConfirmation(false);
+      setShowProjectDeleteConfirmation(false);
       setProjectToDelete(null);
     }
   };
