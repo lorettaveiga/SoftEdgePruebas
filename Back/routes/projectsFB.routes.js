@@ -49,5 +49,4 @@ router.put("/projectsFB/:id/tasks", verifyToken, updateTaskStatus);
 
 router.get("/projectsFB/:id/projectAndTitle", verifyToken, getProjectAndTitle); // Ruta para obtener el proyecto y titulo de usuario
 
-
 export default router;

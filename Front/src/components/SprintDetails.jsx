@@ -7,6 +7,7 @@ const SprintDetails = ({
   onClose,
   setAllTasks,
   projectId,
+  fetchAllTasks,
 }) => {
   console.log("Props recibidas en SprintDetails:", {
     sprint,
@@ -85,6 +86,13 @@ const SprintDetails = ({
 
   // Filtrar las tareas por estado
   const getTasksByStatus = (estado) => {
+    if (estado === "Pendiente") {
+      // Tasks with estado "Pendiente" or undefined/null
+      return sprintTasks.filter(
+        (task) => !task.estado || task.estado === "Pendiente"
+      );
+    }
+    // Only tasks with the exact estado
     return sprintTasks.filter((task) => task.estado === estado);
   };
 

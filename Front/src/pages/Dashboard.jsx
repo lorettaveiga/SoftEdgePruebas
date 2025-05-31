@@ -40,10 +40,15 @@ const Dashboard = () => {
   const [sprintDuration, setSprintDuration] = useState(2); // Default 2 weeks
 
   // Función para generar sprints dinámicamente
-  const generateSprints = (sprintNumber, projectTasks = [], duration = 2, projectCreatedAt = null) => {
+  const generateSprints = (
+    sprintNumber,
+    projectTasks = [],
+    duration = 2,
+    projectCreatedAt = null
+  ) => {
     const sprints = [];
     const durationDays = duration * 7; // Convert weeks to days
-    
+
     for (let i = 1; i <= sprintNumber; i++) {
       // Crear fecha en UTC para evitar problemas de zona horaria
       const startDate = new Date(projectCreatedAt || new Date());
@@ -63,15 +68,15 @@ const Dashboard = () => {
       }
 
       // Filtrar tareas para este sprint específico
-      const sprintTasks = projectTasks.filter(
-        (task) => parseInt(task.sprint, 10) === i
-      ).map((task) => ({
-        title: task.titulo || task.title,
-        description: task.descripcion || task.description,
-        estado: task.estado || 'Pendiente',
-        priority: task.prioridad || task.priority,
-        assignee: task.asignado || task.assignee,
-      }));
+      const sprintTasks = projectTasks
+        .filter((task) => parseInt(task.sprint, 10) === i)
+        .map((task) => ({
+          title: task.titulo || task.title,
+          description: task.descripcion || task.description,
+          estado: task.estado || "Pendiente",
+          priority: task.prioridad || task.priority,
+          assignee: task.asignado || task.assignee,
+        }));
 
       sprints.push({
         number: i,
@@ -231,14 +236,24 @@ const Dashboard = () => {
         // Generar sprints dinámicamente basado en sprintNumber del proyecto
         const sprintNumber = data.sprintNumber || 3;
         const duration = data.sprintDuration || 2;
-        const generatedSprints = generateSprints(sprintNumber, allTasks, duration, data.fechaCreacion);
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          duration,
+          data.fechaCreacion
+        );
         setSprints(generatedSprints);
       } catch (taskError) {
         console.error("Error fetching tasks:", taskError);
         // Si falla al cargar tareas, generar sprints sin tareas
         const sprintNumber = data.sprintNumber || 3;
         const duration = data.sprintDuration || 2;
-        const generatedSprints = generateSprints(sprintNumber, [], duration, data.fechaCreacion);
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          [],
+          duration,
+          data.fechaCreacion
+        );
         setSprints(generatedSprints);
       }
     } catch (error) {
@@ -830,25 +845,34 @@ const Dashboard = () => {
 
   // Función auxiliar para formatear fechas usando UTC
   const formatDateWithoutTimezone = (dateString) => {
-    if (!dateString) return '';
-    
+    if (!dateString) return "";
+
     // Si la fecha ya está en formato YYYY-MM-DD, parsearla como UTC
-    if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const dateParts = dateString.split('-');
+    if (
+      typeof dateString === "string" &&
+      dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+    ) {
+      const dateParts = dateString.split("-");
       const year = parseInt(dateParts[0]);
       const month = parseInt(dateParts[1]);
       const day = parseInt(dateParts[2]);
-      
-      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+
+      return `${String(day).padStart(2, "0")}/${String(month).padStart(
+        2,
+        "0"
+      )}/${year}`;
     }
-    
+
     // Para fechas de Firebase o fechas completas, crear objeto Date y usar UTC
     const date = new Date(dateString);
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
-    
-    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(
+      2,
+      "0"
+    )}/${year}`;
   };
 
   const renderSprintBacklogTab = () => (
@@ -905,7 +929,9 @@ const Dashboard = () => {
               <select
                 id="sprint-duration"
                 value={sprintDuration}
-                onChange={(e) => handleSprintDurationChange(parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleSprintDurationChange(parseInt(e.target.value))
+                }
                 className="sprint-duration-select"
               >
                 <option value={1}>1 semana</option>
@@ -916,11 +942,12 @@ const Dashboard = () => {
             </div>
             <div className="config-info">
               <p>
-                <strong>Información:</strong> Cambiar la duración afectará las fechas de todos los sprints.
+                <strong>Información:</strong> Cambiar la duración afectará las
+                fechas de todos los sprints.
               </p>
               {project.fechaCreacion && (
                 <p>
-                  <strong>Fecha de creación del proyecto:</strong> {" "}
+                  <strong>Fecha de creación del proyecto:</strong>{" "}
                   {formatDateWithoutTimezone(project.fechaCreacion)}
                 </p>
               )}
@@ -969,6 +996,7 @@ const Dashboard = () => {
       handleInputChange={handleInputChange}
       nextTaskNumber={nextTaskNumber}
       setNextTaskNumber={setNextTaskNumber}
+      fetchAllTasks={fetchAllTasks}
     />
   );
 
@@ -997,7 +1025,12 @@ const Dashboard = () => {
       }
 
       const sprintNumber = project.sprintNumber || 3;
-      const regeneratedSprints = generateSprints(sprintNumber, allTasks, newDuration, project.fechaCreacion);
+      const regeneratedSprints = generateSprints(
+        sprintNumber,
+        allTasks,
+        newDuration,
+        project.fechaCreacion
+      );
       setSprints(regeneratedSprints);
     } catch (error) {
       console.error("Error refreshing sprints:", error);
@@ -1019,7 +1052,7 @@ const Dashboard = () => {
         EP: project.EP || [],
         RF: project.RF || [],
         RNF: project.RNF || [],
-        HU: project.HU || []
+        HU: project.HU || [],
       };
 
       const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
@@ -1052,7 +1085,7 @@ const Dashboard = () => {
 
       // Regenerar sprints con nueva duración
       const sprintNumber = project.sprintNumber || 3;
-      
+
       // Fetch tasks again to ensure we have current data
       try {
         const tasksResponse = await fetch(
@@ -1072,16 +1105,26 @@ const Dashboard = () => {
           allTasks = tasksData.tasks || [];
         }
 
-        const regeneratedSprints = generateSprints(sprintNumber, allTasks, newDuration, project.fechaCreacion);
+        const regeneratedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          newDuration,
+          project.fechaCreacion
+        );
         setSprints(regeneratedSprints);
       } catch (taskError) {
         console.error("Error fetching tasks:", taskError);
-        const regeneratedSprints = generateSprints(sprintNumber, [], newDuration, project.fechaCreacion);
+        const regeneratedSprints = generateSprints(
+          sprintNumber,
+          [],
+          newDuration,
+          project.fechaCreacion
+        );
         setSprints(regeneratedSprints);
       }
 
       setSuccessMessage("Duración de sprints actualizada exitosamente.");
-      
+
       // Refresh sprints after successful update
       await refreshSprintsAfterDurationChange(newDuration);
     } catch (error) {
@@ -1389,6 +1432,7 @@ const Dashboard = () => {
           setAllTasks={setAllTasks}
           onClose={handleCloseSprintDetails}
           projectId={projectId}
+          fetchAllTasks={fetchAllTasks}
         />
       )}
 
