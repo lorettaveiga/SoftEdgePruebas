@@ -39,6 +39,7 @@ const RenderRequirementsTab = ({ ...props }) => {
     handleSaveEdit,
     nextTaskNumber,
     setNextTaskNumber,
+    fetchAllTasks,
   } = props;
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // URL del backend
@@ -132,17 +133,19 @@ const RenderRequirementsTab = ({ ...props }) => {
         })),
       };
       await fetch(`${BACKEND_URL}/projectsFB/${project.id}/tasks`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(payload),
       });
+      fetchAllTasks();
       setEditingTasks(false);
       setSuccessMessage("Tareas actualizadas exitosamente.");
     } catch {
       setError("Error al guardar las tareas.");
+      console.error("Error al guardar las tareas:", error);
     }
   };
 

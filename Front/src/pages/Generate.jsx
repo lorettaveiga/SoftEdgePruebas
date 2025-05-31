@@ -99,6 +99,7 @@ function Generate() {
  Tasks should be meaningful and cover all acceptance criteria.
  You MUST include the 'sprintNumber' for the generated project (value: ${sprints}).
  You MUST include the 'sprintDuration' for the generated project (value: ${sprintDuration} weeks).
+ Every task should have all of the corresponding fields: id, titulo, descripcion, prioridad, asignado, estado, and sprint.
  Task IDs should be unique within the project (format: T01, T02, etc.).
  Distribute tasks evenly across ${sprints} sprints.
  Do not include \`\`\`json or \`\`\` markers in the response.
@@ -115,20 +116,20 @@ function Generate() {
       const response = await fetch(`${BACKEND_URL}/generateEpic`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt, 
-          rules: promptRules, 
-          sprints, 
+        body: JSON.stringify({
+          prompt,
+          rules: promptRules,
+          sprints,
           sprintDuration,
           limit,
-          tasksPerStory 
+          tasksPerStory,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const { data } = await response.json();
 
       const cleanJSON = data
@@ -297,7 +298,7 @@ function Generate() {
           <div className="right-container">
             <div className="prompt-options">
               <h3 className="options-title">Configuración de Generación</h3>
-              
+
               <div className="option-group">
                 <span className="option-label">Número de Sprints</span>
                 <input
@@ -378,7 +379,9 @@ function Generate() {
                     if (value === "") {
                       setTasksPerStory(0);
                     } else {
-                      setTasksPerStory(Math.max(1, Math.min(10, Number(value))));
+                      setTasksPerStory(
+                        Math.max(1, Math.min(10, Number(value)))
+                      );
                     }
                   }}
                   min={1}
