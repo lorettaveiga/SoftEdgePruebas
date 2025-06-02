@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// Configuración global de axios
+axios.defaults.withCredentials = true;
+
 const WHOOP_CONFIG = {
     clientId: '4a7cd98e-1a62-45c4-ad24-59011db56b9f',
     clientSecret: 'a315fb94189d174a4ef205b479199c28e496d9fa575bed088d70911f0de0fb35',
@@ -59,7 +62,16 @@ class WhoopService {
     async handleAuthCallback(code) {
         try {
             console.log('Starting token exchange with code:', code);
-            const response = await axios.post(`${WHOOP_CONFIG.backendUrl}/whoop/token`, { code });
+            const response = await axios.post(`${WHOOP_CONFIG.backendUrl}/whoop/token`, 
+                { code },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    withCredentials: true
+                }
+            );
             console.log('Token exchange response:', response.data);
             
             const { access_token, refresh_token, expires_in } = response.data;
@@ -98,7 +110,12 @@ class WhoopService {
             }
         } catch (error) {
             console.error('Error during authentication:', error);
-            this.logout(); // Clear any partial state
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                console.error('Error status:', error.response.status);
+                console.error('Error headers:', error.response.headers);
+            }
+            this.logout();
             throw error;
         }
     }
