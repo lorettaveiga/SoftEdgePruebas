@@ -17,7 +17,7 @@ const allowedOrigins = [
   "https://soft-edge-two.vercel.app",
   "https://dialogflow.cloud.google.com",
   "https://extensions.aitopia.ai",
-  "https://soft-edge-backend.vercel.app/whoop/token" // para el token de whoop|
+  "https://soft-edge-backend.vercel.app"
 ];
 
 // Middleware para eliminar barras diagonales dobles en la URL
@@ -26,30 +26,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware
-app.use(
-  cors({
-    origin: function(origin, callback) {
-      // Permitir peticiones sin origin (como las de curl o postman)
-      if (!origin) return callback(null, true);
-      
-      // Verificar si el origin está en la lista de permitidos
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log('Origin not allowed:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 86400 // 24 horas
-  })
-);
+// Configuración de CORS
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permitir peticiones sin origin (como las de curl o postman)
+    if (!origin) return callback(null, true);
+    
+    // Verificar si el origin está en la lista de permitidos
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Origin not allowed:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 horas
+}));
 
-// Agregar headers adicionales para CORS
+// Middleware para headers CORS adicionales
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -58,6 +56,12 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Manejar preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
   next();
 });
 
