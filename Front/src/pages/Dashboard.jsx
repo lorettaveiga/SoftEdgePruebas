@@ -10,6 +10,7 @@ import TeamEditPopup from "../components/TeamEditPopup";
 import ModificationHistory from "../components/ModificationHistory";
 import SprintDetails from "../components/SprintDetails";
 import "../css/Dashboard.css";
+import ProjectMetrics from "../components/ProjectMetrics";
 
 const Dashboard = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -35,6 +36,60 @@ const Dashboard = () => {
     error: null,
     success: false,
   });
+  const [sprints, setSprints] = useState([]);
+  const [sprintDuration, setSprintDuration] = useState(2); // Default 2 weeks
+
+  // Función para generar sprints dinámicamente
+  const generateSprints = (
+    sprintNumber,
+    projectTasks = [],
+    duration = 2,
+    projectCreatedAt = null
+  ) => {
+    const sprints = [];
+    const durationDays = duration * 7; // Convert weeks to days
+
+    for (let i = 1; i <= sprintNumber; i++) {
+      // Crear fecha en UTC para evitar problemas de zona horaria
+      const startDate = new Date(projectCreatedAt || new Date());
+      // Usar métodos UTC para todos los cálculos de fechas
+      startDate.setUTCDate(startDate.getUTCDate() + (i - 1) * durationDays);
+      const endDate = new Date(startDate);
+      endDate.setUTCDate(endDate.getUTCDate() + durationDays - 1);
+
+      // Determinar status del sprint
+      let status;
+      if (i === 1) {
+        status = "En progreso";
+      } else if (i === 2 && sprintNumber > 1) {
+        status = "Planificado";
+      } else {
+        status = "Pendiente";
+      }
+
+      // Filtrar tareas para este sprint específico
+      const sprintTasks = projectTasks
+        .filter((task) => parseInt(task.sprint, 10) === i)
+        .map((task) => ({
+          title: task.titulo || task.title,
+          description: task.descripcion || task.description,
+          estado: task.estado || "Pendiente",
+          priority: task.prioridad || task.priority,
+          assignee: task.asignado || task.assignee,
+        }));
+
+      sprints.push({
+        number: i,
+        status: status,
+        // Usar toISOString().split("T")[0] para mantener formato UTC
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+        tasks: sprintTasks,
+      });
+    }
+    return sprints;
+  };
+
 
   // Sprint backlog states
   const [sprints, setSprints] = useState([
@@ -89,6 +144,7 @@ const Dashboard = () => {
     },
   ]);
   const [tasks, setTasks] = useState([]);
+
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
@@ -123,6 +179,13 @@ const Dashboard = () => {
   const [draggedTask, setDraggedTask] = useState(null);
 
   useEffect(() => {
+    // Verificar que el usuario sea visitante
+    if (role == "user") {
+      setActiveTab("project-metrics");
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       await fetchProject();
@@ -135,6 +198,7 @@ const Dashboard = () => {
     fetchData();
   }, [projectId]);
 
+  // UseEffect para manejar el mensaje de exito
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
@@ -163,6 +227,7 @@ const Dashboard = () => {
     }
   }, [showProjectDeleteConfirmation]);
 
+  // Función para cargar el proyecto desde la API
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -185,12 +250,59 @@ const Dashboard = () => {
         nombreProyecto: data.nombreProyecto,
         descripcion: data.descripcion,
       });
+
+      // Set sprint duration from project data
+      setSprintDuration(data.sprintDuration || 2);
+
+      // Fetch all tasks and generate sprints
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        // Generar sprints dinámicamente basado en sprintNumber del proyecto
+        const sprintNumber = data.sprintNumber || 3;
+        const duration = data.sprintDuration || 2;
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          duration,
+          data.fechaCreacion
+        );
+        setSprints(generatedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        // Si falla al cargar tareas, generar sprints sin tareas
+        const sprintNumber = data.sprintNumber || 3;
+        const duration = data.sprintDuration || 2;
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          [],
+          duration,
+          data.fechaCreacion
+        );
+        setSprints(generatedSprints);
+      }
     } catch (error) {
       setError("Error al cargar el proyecto. Por favor, inténtalo de nuevo.");
       console.error("Error fetching project:", error);
     }
   };
 
+  // Cargar todas las tareas del proyecto al montar el componente
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -226,6 +338,7 @@ const Dashboard = () => {
     setSelectedSprint(null);
   };
 
+  // Función para obtener los usuarios disponibles que no son miembros del equipo
   const fetchAvailableUsers = async (projectMembers) => {
     try {
       const response = await fetch(`${BACKEND_URL}/users`, {
@@ -265,6 +378,7 @@ const Dashboard = () => {
     }
   };
 
+  // Función para obtener los miembros del equipo del proyecto
   const fetchTeamMembers = async () => {
     try {
       const response = await fetch(
@@ -305,6 +419,7 @@ const Dashboard = () => {
     }
   };
 
+  // Función para obtener todas las tareas del proyecto
   const fetchAllTasks = async () => {
     try {
       const resp = await fetch(
@@ -465,6 +580,7 @@ const Dashboard = () => {
           description: t.descripcion,
           priority: t.prioridad,
           assignee: teamMembers.find((m) => m.id === t.asignados)?.email || "",
+          sprint: t.sprint,
         };
       });
       setTasks((prev) => ({ ...prev, [item.id]: mapped }));
@@ -781,53 +897,116 @@ const Dashboard = () => {
     }
   };
 
+  // Función auxiliar para formatear fechas usando UTC
+  const formatDateWithoutTimezone = (dateString) => {
+    if (!dateString) return "";
+
+    // Si la fecha ya está en formato YYYY-MM-DD, parsearla como UTC
+    if (
+      typeof dateString === "string" &&
+      dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+    ) {
+      const dateParts = dateString.split("-");
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]);
+      const day = parseInt(dateParts[2]);
+
+      return `${String(day).padStart(2, "0")}/${String(month).padStart(
+        2,
+        "0"
+      )}/${year}`;
+    }
+
+    // Para fechas de Firebase o fechas completas, crear objeto Date y usar UTC
+    const date = new Date(dateString);
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(
+      2,
+      "0"
+    )}/${year}`;
+  };
+
   const renderSprintBacklogTab = () => (
-    <div className="sprints-grid">
-      {sprints.length > 0 ? (
-        sprints.map((sprint, index) => (
-          <div
-            key={index}
-            className="sprint-card"
-            onClick={() => handleSprintClick(sprint)}
-          >
-            <h3 className="sprint-title">SPRINT {sprint.number}</h3>
-            <div className="sprint-status-container">
-              <span
-                className={`status-badge ${sprint.status
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")}`}
-              >
-                {sprint.status}
-              </span>
+    <div>
+      <div className="sprints-grid">
+        {sprints.length > 0 ? (
+          sprints.map((sprint, index) => (
+            <div
+              key={index}
+              className="sprint-card"
+              onClick={() => handleSprintClick(sprint)}
+            >
+              <h3 className="sprint-title">SPRINT {sprint.number}</h3>
+              <div className="sprint-status-container">
+                <span
+                  className={`status-badge ${sprint.status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                >
+                  {sprint.status}
+                </span>
+              </div>
+              <div className="sprint-dates">
+                <div className="date-item">
+                  <span className="calendar-icon">📅</span>
+                  <span className="date-text">
+                    {formatDateWithoutTimezone(sprint.startDate)}
+                  </span>
+                </div>
+                <div className="date-separator">→</div>
+                <div className="date-item">
+                  <span className="calendar-icon">📅</span>
+                  <span className="date-text">
+                    {formatDateWithoutTimezone(sprint.endDate)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="sprint-dates">
-              <div className="date-item">
-                <span className="calendar-icon">📅</span>
-                <span className="date-text">
-                  {new Date(sprint.startDate).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <div className="date-separator">→</div>
-              <div className="date-item">
-                <span className="calendar-icon">📅</span>
-                <span className="date-text">
-                  {new Date(sprint.endDate).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
+          ))
+        ) : (
+          <div className="no-sprints">
+            <p>No hay sprints disponibles</p>
+          </div>
+        )}
+      </div>
+
+      {/* Sprint Configuration Section - Only for Admins */}
+      {role === "admin" && (
+        <div className="sprint-configuration-section">
+          <h3>Configuración de Sprints</h3>
+          <div className="sprint-config-content">
+            <div className="config-option">
+              <label htmlFor="sprint-duration">Duración del Sprint:</label>
+              <select
+                id="sprint-duration"
+                value={sprintDuration}
+                onChange={(e) =>
+                  handleSprintDurationChange(parseInt(e.target.value))
+                }
+                className="sprint-duration-select"
+              >
+                <option value={1}>1 semana</option>
+                <option value={2}>2 semanas</option>
+                <option value={3}>3 semanas</option>
+                <option value={4}>4 semanas</option>
+              </select>
+            </div>
+            <div className="config-info">
+              <p>
+                <strong>Información:</strong> Cambiar la duración afectará las
+                fechas de todos los sprints.
+              </p>
+              {project.fechaCreacion && (
+                <p>
+                  <strong>Fecha de creación del proyecto:</strong>{" "}
+                  {formatDateWithoutTimezone(project.fechaCreacion)}
+                </p>
+              )}
             </div>
           </div>
-        ))
-      ) : (
-        <div className="no-sprints">
-          <p>No hay sprints disponibles</p>
         </div>
       )}
     </div>
@@ -871,8 +1050,142 @@ const Dashboard = () => {
       handleInputChange={handleInputChange}
       nextTaskNumber={nextTaskNumber}
       setNextTaskNumber={setNextTaskNumber}
+      fetchAllTasks={fetchAllTasks}
     />
   );
+
+  const renderMetricsTab = () => (
+    <ProjectMetrics tasks={allTasks} sprints={sprints} />
+  );
+
+  // Add function to refresh sprints when duration changes
+  const refreshSprintsAfterDurationChange = async (newDuration) => {
+    try {
+      const tasksResponse = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      let allTasks = [];
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        allTasks = tasksData.tasks || [];
+      }
+
+      const sprintNumber = project.sprintNumber || 3;
+      const regeneratedSprints = generateSprints(
+        sprintNumber,
+        allTasks,
+        newDuration,
+        project.fechaCreacion
+      );
+      setSprints(regeneratedSprints);
+    } catch (error) {
+      console.error("Error refreshing sprints:", error);
+    }
+  };
+
+  // Función para actualizar la duración de los sprints
+  const handleSprintDurationChange = async (newDuration) => {
+    try {
+      // Only send the fields that need to be updated
+      const updateData = {
+        nombreProyecto: project.nombreProyecto,
+        descripcion: project.descripcion,
+        sprintNumber: project.sprintNumber,
+        sprintDuration: newDuration,
+        estatus: project.estatus,
+        fechaCreacion: project.fechaCreacion,
+        // Include all the existing arrays
+        EP: project.EP || [],
+        RF: project.RF || [],
+        RNF: project.RNF || [],
+        HU: project.HU || [],
+      };
+
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        // Try to parse JSON, but handle cases where it might not be JSON
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON, use the response text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Update local state
+      const updatedProject = { ...project, sprintDuration: newDuration };
+      setProject(updatedProject);
+      setSprintDuration(newDuration);
+
+      // Regenerar sprints con nueva duración
+      const sprintNumber = project.sprintNumber || 3;
+
+      // Fetch tasks again to ensure we have current data
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          newDuration,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(
+          sprintNumber,
+          [],
+          newDuration,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Duración de sprints actualizada exitosamente.");
+
+      // Refresh sprints after successful update
+      await refreshSprintsAfterDurationChange(newDuration);
+    } catch (error) {
+      console.error("Error updating sprint duration:", error);
+      setError(`Error al actualizar la duración de los sprints`);
+    }
+  };
 
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);
@@ -1050,29 +1363,41 @@ const Dashboard = () => {
             ←
           </button>
           <div className="dashboard-tabs">
+            {(role == "admin" || role == "editor") && (
+              <>
+                <button
+                  className={`tab-button ${
+                    activeTab === "overview" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("overview")}
+                >
+                  Vista General
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "requirements" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("requirements")}
+                >
+                  Elementos
+                </button>
+                <button
+                  className={`tab-button ${
+                    activeTab === "sprint-backlog" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("sprint-backlog")}
+                >
+                  Sprint Backlog
+                </button>
+              </>
+            )}
             <button
               className={`tab-button ${
-                activeTab === "overview" ? "active" : ""
+                activeTab === "project-metrics" ? "active" : ""
               }`}
-              onClick={() => setActiveTab("overview")}
+              onClick={() => setActiveTab("project-metrics")}
             >
-              Vista General
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "requirements" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("requirements")}
-            >
-              Elementos
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "sprint-backlog" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("sprint-backlog")}
-            >
-              Sprint Backlog
+              Métricas del Proyecto
             </button>
           </div>
 
@@ -1081,6 +1406,8 @@ const Dashboard = () => {
               ? renderOverviewTab()
               : activeTab === "requirements"
               ? renderRequirementsTab()
+              : activeTab === "project-metrics"
+              ? renderMetricsTab()
               : renderSprintBacklogTab()}
           </div>
         </div>
@@ -1159,6 +1486,7 @@ const Dashboard = () => {
           setAllTasks={setAllTasks}
           onClose={handleCloseSprintDetails}
           projectId={projectId}
+          fetchAllTasks={fetchAllTasks}
         />
       )}
 

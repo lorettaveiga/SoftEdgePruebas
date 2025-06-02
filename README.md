@@ -5,7 +5,7 @@ En la gestión de proyectos, se pueden enfrentar retos relacionados con la organ
 ### En terminal dividida:
 ### T1:
 cd Front\
-npm i @mui/material @emotion/styled react react-dom react-router-dom cypress axios\
+npm i @mui/material @emotion/styled react react-dom react-router-dom cypress axios react-chartjs-2 chart.js\
 npm run dev
 
 ### T2:

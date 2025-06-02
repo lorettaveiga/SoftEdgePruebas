@@ -1514,6 +1514,7 @@ td {
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
+
 }
 
 /* Custom scrollbar styles for the team edit popup */
@@ -1619,7 +1620,7 @@ td {
   border-radius: 4px;
   padding: 6px 12px;
   font-size: 14px;
-  min-width: 140px;
+  min-width: 90px;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -1632,9 +1633,12 @@ td {
 /* Sprint Backlog Styles */
 .sprints-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   padding: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .sprint-card {
@@ -1779,10 +1783,25 @@ td {
   .sprints-grid {
     grid-template-columns: 1fr;
     padding: 10px;
+    max-width: 100%;
   }
 
   .sprint-card {
     padding: 15px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .sprints-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1200px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .sprints-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1400px;
   }
 }
 
@@ -1791,4 +1810,112 @@ td {
   align-items: center;
   margin-top: 20px;
   gap: 10px;
+}
+
+/* Sprint Configuration Section */
+.sprint-configuration-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #9e72be;
+}
+
+.sprint-configuration-section h3 {
+  color: #5d3a7f;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f0e6ff;
+}
+
+.sprint-config-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.config-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.config-option label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  min-width: 150px;
+}
+
+.sprint-duration-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.sprint-duration-select:hover {
+  border-color: #9e72be;
+}
+
+.sprint-duration-select:focus {
+  border-color: #9e72be;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(158, 114, 190, 0.1);
+}
+
+.config-info {
+  background-color: #f0e6ff;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #9e72be;
+}
+
+.config-info p {
+  margin: 0 0 0.5rem 0;
+  color: #5d3a7f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.config-info p:last-child {
+  margin-bottom: 0;
+}
+
+.config-info strong {
+  color: #333;
+}
+
+/* Responsive adjustments for sprint configuration */
+@media (max-width: 768px) {
+  .sprint-configuration-section {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .config-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .config-option label {
+    min-width: auto;
+  }
+
+  .sprint-duration-select {
+    width: 100%;
+  }
+}
+.popup-content {
+  max-width: 1050px !important;
 }

@@ -12,7 +12,7 @@ function RevisionIA() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("RNF");
+  const [activeTab, setActiveTab] = useState("HU");
   const [expandedTab, setExpandedTab] = useState(null);
   const [showDeleteIcons, setShowDeleteIcons] = useState(false);
   const [projectData, setProjectData] = useState(null);
@@ -66,6 +66,7 @@ function RevisionIA() {
       fechaCreacion:
         data.fechaCreacion || new Date().toISOString().split("T")[0],
       sprintNumber: data.sprintNumber || 0,
+      sprintDuration: data.sprintDuration || 2,
       EP: parseSection(data.EP || data.epics),
       RF: parseSection(data.RF || data.functionalRequirements),
       RNF: parseSection(data.RNF || data.nonFunctionalRequirements),
@@ -280,18 +281,36 @@ function RevisionIA() {
     setEditTasksData((prev) => {
       const arr = [...prev];
       const t = { ...arr[index] };
-      if (field === "id") {
-        t.id = value;
-      } else if (field === "title") {
-        t.title = value;
-        t.titulo = value;
-      } else if (field === "description") {
-        t.descripcion = value;
-        delete t.data;
-        delete t.description;
-      } else if (field === "priority") {
-        t.priority = value;
-        t.prioridad = value;
+      switch (field) {
+        case "id":
+          t.id = value;
+          break;
+        case "title":
+          t.title = value;
+          t.titulo = value; // Aseguramos que el campo titulo también se actualice
+          break;
+        case "description":
+          t.descripcion = value;
+          delete t.data; // Aseguramos que data no se use
+          delete t.description; // Aseguramos que description no se use
+          break;
+        case "priority":
+          t.priority = value;
+          t.prioridad = value; // Aseguramos que el campo prioridad también se actualice
+          break;
+        case "sprint":
+          // Forzar sprint a ser un número y validarlo
+          let sprintValue = Number(value);
+          if (projectData && typeof projectData.sprintNumber === "number") {
+            if (sprintValue > projectData.sprintNumber)
+              sprintValue = projectData.sprintNumber;
+            if (sprintValue < 0) sprintValue = 0;
+          }
+          t.sprint = sprintValue;
+          break;
+        default:
+          console.warn(`Campo desconocido: ${field}`);
+          return prev; // No hacer nada si el campo es desconocido
       }
       arr[index] = t;
       return arr;
@@ -418,7 +437,10 @@ function RevisionIA() {
         return;
       }
 
-      // 3. Limpiar el almacenamiento y navegar al dashboard
+
+      setSuccessMessage("Proyecto guardado exitosamente."); // Muestra el popup de éxito
+      setTimeout(() => navigate("/home"), 2000); // Redirige a la página de inicio después de 2 segundos
+
       sessionStorage.removeItem("projectData");
       
       // Mostrar mensaje de éxito y luego navegar
@@ -772,6 +794,7 @@ function RevisionIA() {
                             <th>Título</th>
                             <th>Descripción</th>
                             <th>Prioridad</th>
+                            <th>Sprint</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -848,6 +871,26 @@ function RevisionIA() {
                                         ""
                                       ).slice(1)}
                                   </span>
+                                )}
+                              </td>
+                              <td>
+                                {editing ? (
+                                  <input
+                                    type="number"
+                                    value={task.sprint || ""}
+                                    onChange={(e) =>
+                                      handleTaskChange(
+                                        i,
+                                        "sprint",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="edit-input"
+                                    min="0"
+                                    max={projectData.sprintNumber}
+                                  />
+                                ) : (
+                                  task.sprint || "N/A"
                                 )}
                               </td>
                             </tr>

@@ -12,7 +12,7 @@ const TopAppBar = () => {
 
   const tabs = [
     { name: "Perfil", icon: "person" },
-    { name: "Configuraciones", icon: "settings" },
+    { name: "Calendario", icon: "calendar_today" },
     { name: "Biométricos", icon: "favorite" },
     { name: "Cerrar Sesión", icon: "logout" }
   ];
@@ -34,8 +34,8 @@ const TopAppBar = () => {
         setShowProfilePopup(true); // Abre el popup de perfil
         setIsOpen(false); // Cierra el menú desplegable
         break;
-      case "Configuraciones":
-        navigate("/settings");
+      case "Calendario":
+        navigate("/calendar");
         break;
       case "Biométricos":
         navigate("/biometricos");
