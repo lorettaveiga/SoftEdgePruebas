@@ -98,7 +98,7 @@ class WhoopService {
             }
         } catch (error) {
             console.error('Error during authentication:', error);
-            this.logout(); // Clear any partial state
+            this.logout(); 
             throw error;
         }
     }
