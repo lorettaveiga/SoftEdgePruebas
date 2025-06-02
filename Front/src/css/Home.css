@@ -23,15 +23,13 @@ body,
 }
 
 .no-projects-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
   text-align: center;
-  grid-column: 1 / -1; /* Esto hace que ocupe todas las columnas del grid */
-  font-size: 1.2rem;
+  font-size: 18px;
   color: #666;
-  padding: 20px;
+  justify-content: center; 
+  align-items: center; 
+  
+
 }
 
 .logo-container {
