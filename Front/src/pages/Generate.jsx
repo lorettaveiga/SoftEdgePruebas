@@ -25,21 +25,31 @@ function Generate() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteAction, setDeleteAction] = useState("");
 
-  const userID = localStorage.getItem("UserID");
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    if (!userID) return;
-    const allHistories = JSON.parse(localStorage.getItem("history")) || {};
-    const userHistory = allHistories[userID] || [];
-    setHistory(userHistory);
-  }, [userID]);
+    const fetchHistory = async () => {
+      console.log("Llamando historial con id de usuario:", userId);
+      if (!userId) return;
+  
+      try {
+        const response = await fetch(`${BACKEND_URL}/history/${userId}`);
+        if (!response.ok) {
+          throw new Error("Error al obtener el historial de prompts");
+        }
+  
+        const prompts = await response.json();
+        console.log("Historial de prompts obtenido:", prompts);
+        setHistory(prompts.map((item) => item.prompt)); // Solo guarda los textos de los prompts
+      } catch (error) {
+        console.error("Error al cargar el historial desde el backend:", error);
+        setError("No se pudo cargar el historial de prompts.");
+      }
+    };
+  
+    fetchHistory();
+  }, []);
 
-  useEffect(() => {
-    if (!userID) return;
-    const allHistories = JSON.parse(localStorage.getItem("history")) || {};
-    allHistories[userID] = history;
-    localStorage.setItem("history", JSON.stringify(allHistories));
-  }, [history, userID]);
 
   const promptRules = `Please create a JSON object with the following structure:
  {
@@ -185,16 +195,36 @@ function Generate() {
       setPrompt("");
     } else if (deleteAction === "history") {
       setHistory([]);
-      localStorage.setItem("history", JSON.stringify({ [userID]: [] }));
+      localStorage.setItem("history", JSON.stringify({ [userId]: [] }));
     }
     setShowDeleteConfirmation(false);
   };
 
-  const addToHistory = (prompt) => {
-    setHistory((prevHistory) => {
-      const newHistory = [prompt, ...prevHistory];
-      return newHistory.slice(0, 4);
-    });
+  const addToHistory = async (prompt) => {
+    try {
+      if (!userId) {
+        setError("No se encontró el ID del usuario. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+  
+      const response = await fetch(`${BACKEND_URL}/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, prompt }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error al guardar el prompt en la base de datos");
+      }
+  
+      const newPrompt = await response.json();
+  
+      // Actualiza el historial local
+      setHistory((prevHistory) => [newPrompt.prompt, ...prevHistory]);
+    } catch (error) {
+      console.error("Error al guardar el prompt:", error);
+      setError("No se pudo guardar el prompt en el historial.");
+    }
   };
 
   useEffect(() => {
@@ -403,14 +433,6 @@ function Generate() {
                   </div>
                 ))}
               </div>
-              {history.length > 0 && (
-                <button
-                  className="clear-history-button"
-                  onClick={handleDeleteHistory}
-                >
-                  Limpiar Historial
-                </button>
-              )}
             </div>
           </div>
         </div>
