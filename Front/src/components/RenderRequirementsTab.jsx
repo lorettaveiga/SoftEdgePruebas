@@ -599,48 +599,38 @@ const RenderRequirementsTab = ({ ...props }) => {
                                 </td>
                                 <td>
                                   {editingTasks ? (
-                                    <input
-                                      type="number"
-                                      className="edit-input"
+                                    <select
+                                      className="assignee-dropdown-button"
                                       value={
                                         task.sprint === undefined ||
                                         task.sprint === null
                                           ? ""
                                           : task.sprint
                                       }
-                                      min={0}
-                                      max={project?.sprintNumber ?? 99}
                                       onChange={(e) => {
-                                        // Validar que el valor sea un número
-                                        let value = e.target.value;
+                                        const value = e.target.value;
                                         if (value === "") {
                                           handleTaskEditChange(
                                             task.id,
                                             "sprint",
                                             "N/A"
                                           );
-                                          return;
+                                        } else {
+                                          handleTaskEditChange(
+                                            task.id,
+                                            "sprint",
+                                            Number(value)
+                                          );
                                         }
-                                        let num = Number(value);
-                                        if (isNaN(num)) return;
-                                        // Restringir el valor al rango de sprints del proyecto
-                                        if (
-                                          project &&
-                                          typeof project.sprintNumber ===
-                                            "number"
-                                        ) {
-                                          if (num > project.sprintNumber)
-                                            num = project.sprintNumber;
-                                          if (num < 0) value = 0;
-                                        }
-                                        handleTaskEditChange(
-                                          task.id,
-                                          "sprint",
-                                          num
-                                        );
                                       }}
-                                      style={{ width: "60px" }}
-                                    />
+                                    >
+                                      <option value="">N/A</option>
+                                      {Array.from({ length: project?.sprintNumber || 3 }, (_, i) => (
+                                        <option key={i + 1} value={i + 1}>
+                                          {i + 1}
+                                        </option>
+                                      ))}
+                                    </select>
                                   ) : (
                                     task.sprint ?? "N/A"
                                   )}

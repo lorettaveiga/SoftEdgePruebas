@@ -1620,7 +1620,7 @@ td {
   border-radius: 4px;
   padding: 6px 12px;
   font-size: 14px;
-  min-width: 140px;
+  min-width: 90px;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -1915,4 +1915,7 @@ td {
   .sprint-duration-select {
     width: 100%;
   }
+}
+.popup-content {
+  max-width: 1050px !important;
 }
