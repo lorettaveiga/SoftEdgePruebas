@@ -618,13 +618,14 @@ tr:last-child td {
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
-  transition: background-color 0.3s;
-  margin-top: 15px;
-  margin-bottom: 15px;
+  transition: all 0.3s;
+  margin: 0; /* Elimina el margen superior/inferior que tenía */
 }
 
 .edit-project-button:hover {
   background-color: #7a5a96;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .edit-input,
@@ -650,7 +651,9 @@ tr:last-child td {
 .center-button-container {
   display: flex;
   justify-content: center;
-  margin-top: 12px;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
 }
 
 /* Back to Generate button */
@@ -677,3 +680,17 @@ tr:last-child td {
   background: #d1c4e9;
 }
 
+.edit-project-button.cancel {
+  background-color: #ff6f6f;
+  color: white;
+  margin-right: 10px; /* Espacio entre botones */
+}
+
+.edit-project-button.cancel:hover {
+  background-color: #e05555;
+}
+
+.edit-project-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
