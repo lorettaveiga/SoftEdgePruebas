@@ -1,237 +1,314 @@
-/* Contenedor principal compacto */
-.perfil-popup-container {
-  background-color: white;
-  border-radius: 12px;
-  width: 500px;
-  max-width: 95%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 25px;
-  position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Contenido principal compacto */
-.perfil-content {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-/* Sección de perfil compacta */
-.perfil-left {
-  background-color: white;
-  border-radius: 12px;
-  padding: 25px;
-  text-align: center;
-}
-
-/* Foto de perfil optimizada */
-.perfil-picture {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 15px;
-  border: 2px solid #ddd;
-}
-
-/* Información del perfil compacta */
-.perfil-info h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #5d3a7f;
-  margin-bottom: 10px;
-}
-
-.perfil-info p {
-  font-size: 14px;
-  color: #666;
-  margin: 8px 0;
-}
-
-/* Botones optimizados */
-.edit-info-button,
-.change-password-button {
-  background-color: #5d3a7f;
-  color: white;
-  border: none;
-  padding: 12px 18px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  width: 100%;
-  max-width: 200px;
-  margin: 8px auto;
-  display: block;
-}
-
-/* Modo edición compacto */
-.perfil-info label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #333;
-}
-
-.perfil-info input {
-  width: 100%;
-  padding: 8px 10px;
-  margin-top: 4px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.edit-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 15px;
-  justify-content: center;
-}
-
-.save-button,
-.cancel-button {
-  padding: 8px 12px;
-  font-size: 13px;
-}
-
-/* Password Popup Styles - Consistent with Perfil Popup */
+/* Main overlay */
 .popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 
-.popup-content {
-  background-color: white;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 95%;
-  padding: 25px;
-  position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+/* Purple popup container */
+.perfil-popup-container {
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  border-radius: 15px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 25px rgba(93, 58, 127, 0.5);
 }
 
-.popup-content h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #5d3a7f;
-  margin-bottom: 20px;
+/* Close button */
+.close-popup-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #f0e6ff;
+  transition: transform 0.2s;
+}
+
+.close-popup-button:hover {
+  transform: scale(1.2);
+  color: white;
+}
+
+/* Profile content */
+.perfil-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.perfil-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Profile picture styles */
+.profile-picture-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.perfil-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #f0e6ff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.profile-initials {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 48px;
+  font-weight: bold;
+  background-color: #7e57c2;
+  border: 4px solid #f0e6ff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Image upload */
+.image-upload-container {
+  margin-top: 1rem;
   text-align: center;
 }
 
-.popup-content label {
+.upload-label {
+  background-color: #f0e6ff;
+  color: #5d3a7f;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.upload-label:hover {
+  background-color: white;
+  transform: translateY(-2px);
+}
+
+/* Profile info */
+.perfil-info {
+  width: 100%;
+  max-width: 400px;
+}
+
+.perfil-info h2 {
+  color: rgb(0, 0, 0);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 1.8rem;
+}
+
+.perfil-info p {
+  margin-bottom: 1rem;
+  color: #000000;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.perfil-info strong {
+    
+  color: rgb(0, 0, 0);
+}
+
+/* Form labels and inputs */
+.perfil-info label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
+  margin-bottom: 1.2rem;
+  color: #5d3a7f;
+  font-size: 1rem;
+}
+
+.perfil-info input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  border: 2px solid #f0e6ff;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
   color: #333;
 }
 
-.popup-content input {
+.perfil-info input:focus {
+  outline: none;
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+/* Buttons */
+.edit-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.edit-info-button,
+.change-password-button,
+.save-button,
+.cancel-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.edit-info-button,
+.change-password-button {
+  background-color: #f0e6ff;
+  color: #5d3a7f;
   width: 100%;
-  padding: 8px 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+  margin-top: 1rem;
+}
+
+.edit-info-button:hover,
+.change-password-button:hover {
+  background-color: #5d3a7f;
+  transform: translateY(-2px);
+}
+
+.save-button {
+  background-color: #f0e6ff;
+  color: #5d3a7f;
+}
+
+.save-button:hover {
+  background-color: white;
+  transform: translateY(-2px);
+}
+
+.cancel-button {
+  background-color: #7e57c2;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #9575cd;
+  transform: translateY(-2px);
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.spinner {
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border-top-color: #f0e6ff;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Password popup */
+.password-popup-container {
+  background-color: #ffffff;
+  color: white;
+  border-radius: 15px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(93, 58, 127, 0.5);
+}
+
+.password-popup-container h2 {
+  color: black;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.password-popup-container label {
+  display: block;
+  margin-bottom: 1.2rem;
+  color: #000000;
+}
+
+.password-popup-container input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  border: 2px solid #f0e6ff;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  color: #333;
 }
 
 .popup-buttons {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 1rem;
+  margin-top: 2rem;
   justify-content: center;
 }
 
-.popup-buttons .save-button {
-  background-color: #5d3a7f;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex: 1;
-  max-width: 150px;
-}
-
-.popup-buttons .cancel-button {
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex: 1;
-  max-width: 150px;
-}
-
-.popup-buttons .save-button:hover {
-  background-color: #4a2d66;
-}
-
-.popup-buttons .cancel-button:hover {
-  background-color: #e0e0e0;
-}
-
 /* Responsive adjustments */
-@media (max-width: 480px) {
-  .popup-content {
-    padding: 20px;
-    width: 90%;
+@media (max-width: 768px) {
+  .perfil-popup-container,
+  .password-popup-container {
+    padding: 1.5rem;
   }
   
+  .perfil-picture,
+  .profile-initials {
+    width: 120px;
+    height: 120px;
+    font-size: 36px;
+  }
+  
+  .perfil-info h2 {
+    font-size: 1.5rem;
+  }
+  
+  .perfil-info p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-buttons,
   .popup-buttons {
     flex-direction: column;
   }
   
-  .popup-buttons .save-button,
-  .popup-buttons .cancel-button {
-    max-width: 100%;
+  .save-button,
+  .cancel-button {
     width: 100%;
   }
 }
-
-/* Botón de cerrar sin fondo */
-.close-popup-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none; /* Elimina el fondo */
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666; /* Color del icono */
-  padding: 5px; /* Espacio para hacer más fácil el click */
-  line-height: 1;
-  transition: color 0.2s ease;
-}
-
-.close-popup-button:hover {
-  color: #333; /* Color más oscuro al hacer hover */
-  background: none; /* Asegura que no tenga fondo al hacer hover */
-}
-
-/* Si usas un ícono SVG en lugar de texto (×) */
-.close-popup-button svg {
-  fill: currentColor; /* Hereda el color del botón */
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-}
-

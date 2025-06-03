@@ -23,13 +23,15 @@ body,
 }
 
 .no-projects-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
   text-align: center;
-  font-size: 18px;
+  grid-column: 1 / -1; /* Esto hace que ocupe todas las columnas del grid */
+  font-size: 1.2rem;
   color: #666;
-  justify-content: center; 
-  align-items: center; 
-  
-
+  padding: 20px;
 }
 
 .logo-container {
@@ -210,6 +212,23 @@ body,
     gap: 15px;
   }
 
+  .project-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
+  height: 220px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+}
+
   .project-card,
   .new-project-card {
     height: 200px;
@@ -229,3 +248,5 @@ body,
     font-size: 24px;
   }
 }
+
+

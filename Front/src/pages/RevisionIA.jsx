@@ -74,6 +74,15 @@ function RevisionIA() {
     };
   };
 
+  const handleCancelProjectEdit = () => {
+  setEditingProject(false);
+  // Restaurar los datos originales si es necesario
+  const sessionData = sessionStorage.getItem("projectData");
+  if (sessionData) {
+    setProjectData(JSON.parse(sessionData));
+  }
+};
+
   const handleDragStart = (item) => {
     setDraggedItem(item);
   };
@@ -383,11 +392,11 @@ function RevisionIA() {
       const userId = localStorage.getItem("userId");
 
       if (!userId) {
-        setError("No se encontró el ID de usuario en el almacenamiento local."); // Muestra el popup de error
+        setError("No se encontró el ID de usuario en el almacenamiento local.");
         return;
       }
 
-      // Hacer Post al proyecto
+      // 1. Guardar el proyecto en la base de datos
       const response = await fetch(`${BACKEND_URL}/projectsFB/`, {
         method: "POST",
         headers: {
@@ -399,18 +408,14 @@ function RevisionIA() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(
-          `Error al guardar el proyecto: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al guardar el proyecto: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
       const projectResponse = await response.json();
       const projectId = projectResponse.id;
 
-      // Linkear el proyecto al usuario
+      // 2. Vincular el proyecto al usuario
       const linkResponse = await fetch(
         `${BACKEND_URL}/projectsFB/linkUserToProject`,
         {
@@ -428,20 +433,27 @@ function RevisionIA() {
 
       if (!linkResponse.ok) {
         const errorData = await linkResponse.json();
-        setError(
-          `Error al vincular el proyecto al usuario: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al vincular el proyecto al usuario: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
+
       setSuccessMessage("Proyecto guardado exitosamente."); // Muestra el popup de éxito
       setTimeout(() => navigate("/home"), 2000); // Redirige a la página de inicio después de 2 segundos
+
       sessionStorage.removeItem("projectData");
+      
+      // Mostrar mensaje de éxito y luego navegar
+      setSuccessMessage("Proyecto guardado exitosamente. Redirigiendo...");
+      
+      // Redirigir después de 2 segundos (para que el usuario vea el mensaje)
+      setTimeout(() => {
+        navigate(`/project/${projectId}`);
+      }, 2000);
+
     } catch (error) {
       console.error("Error al guardar el proyecto:", error);
-      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo."); // Muestra el popup de error
+      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo.");
     }
   };
 
@@ -594,21 +606,30 @@ function RevisionIA() {
           </>
         )}
         <div className="center-button-container">
-          <button
-            className="edit-project-button"
-            onClick={
-              editingProject
-                ? handleSaveProjectChanges
-                : () => setEditingProject(true)
-            }
-            disabled={saveStatus.loading}
-          >
-            {editingProject
-              ? saveStatus.loading
-                ? "Guardando..."
-                : "Guardar Cambios"
-              : "Editar Proyecto"}
-          </button>
+          {editingProject ? (
+            <>
+              <button
+                className="edit-project-button cancel"
+                onClick={handleCancelProjectEdit}
+              >
+                Cancelar
+              </button>
+              <button
+                className="edit-project-button"
+                onClick={handleSaveProjectChanges}
+                disabled={saveStatus.loading}
+              >
+                {saveStatus.loading ? "Guardando..." : "Guardar Cambios"}
+              </button>
+            </>
+          ) : (
+            <button
+              className="edit-project-button"
+              onClick={() => setEditingProject(true)}
+            >
+              Editar Proyecto
+            </button>
+          )}
         </div>
         {saveStatus.success && (
           <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />

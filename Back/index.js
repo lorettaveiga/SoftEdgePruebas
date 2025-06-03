@@ -7,19 +7,20 @@ import projectsFBRouters from "./routes/projectsFB.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import dialogflowRoutes from "./routes/dialogflow.routes.js";
+import promptRoutes from "./routes/prompt.routes.js"; // Importa las rutas de prompts
 
 const app = express();
 
 const allowedOrigins = [
   `http://localhost:5173`,
   `http://localhost:5001`,
-  "https://developer-dashboard.whoop.com",
   "https://soft-edge-two.vercel.app",
   "https://dialogflow.cloud.google.com",
   "https://extensions.aitopia.ai",
   "https://soft-edge-backend.vercel.app",
   "https://api.prod.whoop.com/oauth/oauth2/auth",
   "https://api.prod.whoop.com/oauth/oauth2/token"
+
 ];
 
 // Middleware para eliminar barras diagonales dobles en la URL
@@ -31,10 +32,7 @@ app.use((req, res, next) => {
 // Configuración de CORS
 app.use(cors({
   origin: function(origin, callback) {
-    // Permitir peticiones sin origin (como las de curl o postman)
     if (!origin) return callback(null, true);
-    
-    // Verificar si el origin está en la lista de permitidos
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -46,7 +44,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // 24 horas
+  maxAge: 86400
 }));
 
 // Middleware para headers CORS adicionales
@@ -59,7 +57,6 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
-  // Manejar preflight requests
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -70,11 +67,13 @@ app.use((req, res, next) => {
 app.use(morgan("dev"));
 app.use(express.json());
 
+// Rutas
 app.use(authRoutes);
-app.use(userRoutes); // Agregar la ruta de usuarios
+app.use(userRoutes);
 app.use(projectsFBRouters);
 app.use(aiRoutes);
 app.use(dialogflowRoutes);
+app.use(promptRoutes); // Agrega las rutas de prompts
 
 // Development only: (comentar para produccion)
 if (process.env.NODE_ENV !== "production") {
