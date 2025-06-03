@@ -620,7 +620,29 @@ const Dashboard = () => {
 
   const handleSaveTeam = async (addedMembers, removedMembers, currentUser) => {
     try {
-      // 1. Realizar las operaciones de vinculación/desvinculación
+      // Ensure user information is complete
+      const user = currentUser || {
+        userId: userId || localStorage.getItem("userId"),
+        name: localStorage.getItem("username"),
+        lastname: localStorage.getItem("lastname"),
+      };
+
+      // Log user data for debugging
+      console.log("Current User (from handleSaveTeam):", user);
+      console.log("Added Members:", addedMembers);
+      console.log("Removed Members:", removedMembers);
+
+      if (!user.userId || !user.name || !user.lastname) {
+        console.error("Información del usuario actual incompleta o no definida.");
+        console.error("Datos faltantes:", {
+          userId: user.userId,
+          name: user.name,
+          lastname: user.lastname,
+        });
+        setError("Error: Información del usuario actual incompleta.");
+        return;
+      }
+
       await Promise.all([
         ...addedMembers.map(member =>
           fetch(`${BACKEND_URL}/projectsFB/linkUserToProject`, {
@@ -644,10 +666,21 @@ const Dashboard = () => {
         )
       ]);
 
-      // 2. Registrar cambios en el historial
       await Promise.all([
-        ...addedMembers.map(member =>
-          fetch(`${BACKEND_URL}/projectsFB/${projectId}/history`, {
+        ...addedMembers.map(member => {
+          const url = `${BACKEND_URL}/projectsFB/${projectId}/history`;
+          console.log("POST URL for MEMBER_ADDED:", url);
+          console.log("Payload for MEMBER_ADDED:", {
+            action: "MEMBER_ADDED",
+            userId: user.userId,
+            userName: user.name,
+            userLastname: user.lastname,
+            targetUserId: member.id,
+            details: `Se agregó a ${member.name} ${member.lastname || ''} (${member.email}) al equipo del proyecto`,
+            timestamp: new Date().toISOString(),
+          });
+
+          return fetch(url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -655,17 +688,31 @@ const Dashboard = () => {
             },
             body: JSON.stringify({
               action: "MEMBER_ADDED",
-              userId: currentUser.userId,
-              userName: currentUser.name,
-              userLastname: currentUser.lastname,
+              userId: user.userId,
+              userName: user.name,
+              userLastname: user.lastname,
               targetUserId: member.id,
               details: `Se agregó a ${member.name} ${member.lastname || ''} (${member.email}) al equipo del proyecto`,
               timestamp: new Date().toISOString(),
             }),
-          })
-        ),
-        ...removedMembers.map(member =>
-          fetch(`${BACKEND_URL}/projectsFB/${projectId}/history`, {
+          }).catch(err => {
+            console.error("Error in MEMBER_ADDED request:", err);
+          });
+        }),
+        ...removedMembers.map(member => {
+          const url = `${BACKEND_URL}/projectsFB/${projectId}/history`;
+          console.log("POST URL for MEMBER_REMOVED:", url);
+          console.log("Payload for MEMBER_REMOVED:", {
+            action: "MEMBER_REMOVED",
+            userId: user.userId,
+            userName: user.name,
+            userLastname: user.lastname,
+            targetUserId: member.id,
+            details: `Se removió a ${member.name} ${member.lastname || ''} (${member.email}) del equipo del proyecto`,
+            timestamp: new Date().toISOString(),
+          });
+
+          return fetch(url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -673,32 +720,31 @@ const Dashboard = () => {
             },
             body: JSON.stringify({
               action: "MEMBER_REMOVED",
-              userId: currentUser.userId,
-              userName: currentUser.name,
-              userLastname: currentUser.lastname,
+              userId: user.userId,
+              userName: user.name,
+              userLastname: user.lastname,
               targetUserId: member.id,
               details: `Se removió a ${member.name} ${member.lastname || ''} (${member.email}) del equipo del proyecto`,
               timestamp: new Date().toISOString(),
             }),
-          })
-        )
+          }).catch(err => {
+            console.error("Error in MEMBER_REMOVED request:", err);
+          });
+        })
       ]);
 
-      // 3. Actualizar el estado local
       setTeamMembers(prev => [
         ...prev.filter(tm => !removedMembers.some(rm => rm.email === tm.email)),
         ...addedMembers
       ]);
-      
       setAvailableMembers(prev => [
         ...prev.filter(am => !addedMembers.some(m => m.email === am.email)),
         ...removedMembers
       ]);
-
       setShowTeamPopup(false);
       setSuccessMessage("Equipo actualizado correctamente");
     } catch (err) {
-      console.error(err);
+      console.error("Error en handleSaveTeam:", err);
       setError("No se pudieron guardar los cambios de equipo");
     }
   };
