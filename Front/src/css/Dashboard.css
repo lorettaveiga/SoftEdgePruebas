@@ -1514,6 +1514,7 @@ td {
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
+
 }
 
 /* Custom scrollbar styles for the team edit popup */
@@ -1619,7 +1620,7 @@ td {
   border-radius: 4px;
   padding: 6px 12px;
   font-size: 14px;
-  min-width: 140px;
+  min-width: 90px;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -1629,166 +1630,148 @@ td {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23000000' d='M0 0l5 6 5-6z'/></svg>");
 }
 
-/* Sprint Backlog Styles */
-.sprints-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 20px;
-}
-
-.sprint-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-
-.sprint-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.sprint-card h3.sprint-title {
-  color: #5d3a7f !important;
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #5d3a7f;
-  padding-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.sprint-status-container {
-  margin-bottom: 15px;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-}
-
-.status-badge.en-progreso {
-  background-color: #f1c6ff;
-}
-
-.status-badge.planificado {
-  background-color: #c6d1ff;
-}
-
-.status-badge.pendiente {
-  background-color: #fdbcbc;
-}
-
-.sprint-dates {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding: 10px;
-}
-
-.date-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.calendar-icon {
-  font-size: 16px;
-  color: #b388ff;
-}
-
-.date-text {
-  font-size: 14px;
-  color: #666;
-}
-
-.date-separator {
-  color: #b388ff;
-  font-weight: bold;
-  margin: 0 5px;
-}
-
-.sprint-tasks {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-}
-
-.sprint-task {
-  background-color: #fde7ff3f;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-}
-
-.sprint-task h4 {
-  color: #333;
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.sprint-task p {
-  color: #666;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
-.task-status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #333;
-}
-
-.task-status-badge.en-progreso {
-  background-color: #f1c6ff;
-}
-
-.task-status-badge.completado {
-  background-color: #c0fbc5;
-}
-
-.task-status-badge.pendiente {
-  background-color: #fdbcbc;
-}
-
-.no-sprints {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 16px;
-  background-color: #f3e5ff;
-  border-radius: 8px;
-  grid-column: 1 / -1;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .sprints-grid {
-    grid-template-columns: 1fr;
-    padding: 10px;
-  }
-
-  .sprint-card {
-    padding: 15px;
-  }
-}
-
 .button-container {
   display: flex;
   align-items: center;
   margin-top: 20px;
   gap: 10px;
+}
+
+/* Sprint Configuration Section */
+.sprint-configuration-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #9e72be;
+}
+
+.sprint-configuration-section h3 {
+  color: #5d3a7f;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f0e6ff;
+}
+
+.sprint-config-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.config-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.config-option label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  min-width: 150px;
+}
+
+.sprint-duration-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.sprint-duration-select:hover {
+  border-color: #9e72be;
+}
+
+.sprint-duration-select:focus {
+  border-color: #9e72be;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(158, 114, 190, 0.1);
+}
+
+.delete-sprint-button {
+  padding: 0.75rem 1rem;
+  border: 2px solid #dc3545;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: #dc3545;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+  font-weight: 600;
+}
+
+.delete-sprint-button:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+}
+
+.delete-sprint-button:disabled {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.delete-sprint-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.config-info {
+  background-color: #f0e6ff;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #9e72be;
+}
+
+.config-info p {
+  margin: 0 0 0.5rem 0;
+  color: #5d3a7f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.config-info p:last-child {
+  margin-bottom: 0;
+}
+
+.config-info strong {
+  color: #333;
+}
+
+/* Responsive adjustments for sprint configuration */
+@media (max-width: 768px) {
+  .sprint-configuration-section {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .config-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .config-option label {
+    min-width: auto;
+  }
+
+  .sprint-duration-select {
+    width: 100%;
+  }
 }

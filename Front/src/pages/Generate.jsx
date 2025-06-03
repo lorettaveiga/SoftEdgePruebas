@@ -19,32 +19,44 @@ function Generate() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [sprints, setSprints] = useState(1);
+  const [sprintDuration, setSprintDuration] = useState(2); // Add sprint duration state
   const [copyButtonText, setCopyButtonText] = useState("Copiar");
   const [pasteButtonText, setPasteButtonText] = useState("Pegar");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteAction, setDeleteAction] = useState("");
 
-  const userID = localStorage.getItem("UserID");
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    if (!userID) return;
-    const allHistories = JSON.parse(localStorage.getItem("history")) || {};
-    const userHistory = allHistories[userID] || [];
-    setHistory(userHistory);
-  }, [userID]);
+    const fetchHistory = async () => {
+      console.log("Llamando historial con id de usuario:", userId);
+      if (!userId) return;
+  
+      try {
+        const response = await fetch(`${BACKEND_URL}/history/${userId}`);
+        if (!response.ok) {
+          throw new Error("Error al obtener el historial de prompts");
+        }
+  
+        const prompts = await response.json();
+        console.log("Historial de prompts obtenido:", prompts);
+        setHistory(prompts.map((item) => item.prompt)); // Solo guarda los textos de los prompts
+      } catch (error) {
+        console.error("Error al cargar el historial desde el backend:", error);
+        setError("No se pudo cargar el historial de prompts.");
+      }
+    };
+  
+    fetchHistory();
+  }, []);
 
-  useEffect(() => {
-    if (!userID) return;
-    const allHistories = JSON.parse(localStorage.getItem("history")) || {};
-    allHistories[userID] = history;
-    localStorage.setItem("history", JSON.stringify(allHistories));
-  }, [history, userID]);
 
   const promptRules = `Please create a JSON object with the following structure:
  {
    "nombreProyecto": "Nombre del proyecto",
    "descripcion": "Breve descripción del proyecto",
    "sprintNumber": ${sprints},
+   "sprintDuration": ${sprintDuration},
    "estatus": "Abierto" or "Cerrado",
    "EP": [
      {
@@ -96,6 +108,8 @@ function Generate() {
  Each user story should have ${tasksPerStory} tasks.
  Tasks should be meaningful and cover all acceptance criteria.
  You MUST include the 'sprintNumber' for the generated project (value: ${sprints}).
+ You MUST include the 'sprintDuration' for the generated project (value: ${sprintDuration} weeks).
+ Every task should have all of the corresponding fields: id, titulo, descripcion, prioridad, asignado, estado, and sprint.
  Task IDs should be unique within the project (format: T01, T02, etc.).
  Distribute tasks evenly across ${sprints} sprints.
  Do not include \`\`\`json or \`\`\` markers in the response.
@@ -112,19 +126,20 @@ function Generate() {
       const response = await fetch(`${BACKEND_URL}/generateEpic`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt, 
-          rules: promptRules, 
-          sprints, 
+        body: JSON.stringify({
+          prompt,
+          rules: promptRules,
+          sprints,
+          sprintDuration,
           limit,
-          tasksPerStory 
+          tasksPerStory,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const { data } = await response.json();
 
       const cleanJSON = data
@@ -180,16 +195,36 @@ function Generate() {
       setPrompt("");
     } else if (deleteAction === "history") {
       setHistory([]);
-      localStorage.setItem("history", JSON.stringify({ [userID]: [] }));
+      localStorage.setItem("history", JSON.stringify({ [userId]: [] }));
     }
     setShowDeleteConfirmation(false);
   };
 
-  const addToHistory = (prompt) => {
-    setHistory((prevHistory) => {
-      const newHistory = [prompt, ...prevHistory];
-      return newHistory.slice(0, 4);
-    });
+  const addToHistory = async (prompt) => {
+    try {
+      if (!userId) {
+        setError("No se encontró el ID del usuario. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+  
+      const response = await fetch(`${BACKEND_URL}/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, prompt }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error al guardar el prompt en la base de datos");
+      }
+  
+      const newPrompt = await response.json();
+  
+      // Actualiza el historial local
+      setHistory((prevHistory) => [newPrompt.prompt, ...prevHistory]);
+    } catch (error) {
+      console.error("Error al guardar el prompt:", error);
+      setError("No se pudo guardar el prompt en el historial.");
+    }
   };
 
   useEffect(() => {
@@ -293,7 +328,7 @@ function Generate() {
           <div className="right-container">
             <div className="prompt-options">
               <h3 className="options-title">Configuración de Generación</h3>
-              
+
               <div className="option-group">
                 <span className="option-label">Número de Sprints</span>
                 <input
@@ -316,6 +351,20 @@ function Generate() {
                   min={1}
                   max={10}
                 />
+              </div>
+
+              <div className="option-group">
+                <span className="option-label">Duración del Sprint</span>
+                <select
+                  className="option-select"
+                  value={sprintDuration}
+                  onChange={(e) => setSprintDuration(parseInt(e.target.value))}
+                >
+                  <option value={1}>1 semana</option>
+                  <option value={2}>2 semanas</option>
+                  <option value={3}>3 semanas</option>
+                  <option value={4}>4 semanas</option>
+                </select>
               </div>
 
               <div className="option-group">
@@ -360,7 +409,9 @@ function Generate() {
                     if (value === "") {
                       setTasksPerStory(0);
                     } else {
-                      setTasksPerStory(Math.max(1, Math.min(10, Number(value))));
+                      setTasksPerStory(
+                        Math.max(1, Math.min(10, Number(value)))
+                      );
                     }
                   }}
                   min={1}
@@ -382,14 +433,6 @@ function Generate() {
                   </div>
                 ))}
               </div>
-              {history.length > 0 && (
-                <button
-                  className="clear-history-button"
-                  onClick={handleDeleteHistory}
-                >
-                  Limpiar Historial
-                </button>
-              )}
             </div>
           </div>
         </div>

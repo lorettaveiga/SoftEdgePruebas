@@ -39,6 +39,7 @@ const RenderRequirementsTab = ({ ...props }) => {
     handleSaveEdit,
     nextTaskNumber,
     setNextTaskNumber,
+    fetchAllTasks,
   } = props;
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // URL del backend
@@ -128,6 +129,7 @@ const RenderRequirementsTab = ({ ...props }) => {
           prioridad: t.priority,
           asignados:
             teamMembers.find((m) => m.email === t.assignee)?.id || null,
+          sprint: t.sprint,
         })),
       };
       await fetch(`${BACKEND_URL}/projectsFB/${project.id}/tasks`, {
@@ -138,10 +140,12 @@ const RenderRequirementsTab = ({ ...props }) => {
         },
         body: JSON.stringify(payload),
       });
+      fetchAllTasks();
       setEditingTasks(false);
       setSuccessMessage("Tareas actualizadas exitosamente.");
     } catch {
       setError("Error al guardar las tareas.");
+      console.error("Error al guardar las tareas:", error);
     }
   };
 
@@ -284,17 +288,6 @@ const RenderRequirementsTab = ({ ...props }) => {
                   e.stopPropagation();
                   setEditing(true);
                 }}
-                style={{
-                  position: "absolute",
-                  left: "20px",
-                  top: "20px",
-                  backgroundColor: "#f0e6ff",
-                  color: "#5d3a7f",
-                  border: "none",
-                  borderRadius: "4px",
-                  padding: "8px 12px",
-                  cursor: "pointer",
-                }}
               >
                 Editar
               </button>
@@ -340,7 +333,8 @@ const RenderRequirementsTab = ({ ...props }) => {
               {activeRequirement === "HU" && (
                 <div className="tasks-section">
                   <h4>Tareas relacionadas:</h4>
-                  {tasks[selectedItem.id] && tasks[selectedItem.id].length > 0 ? (
+                  {tasks[selectedItem.id] &&
+                  tasks[selectedItem.id].length > 0 ? (
                     <div className="tasks-table-container">
                       <table className="tasks-table">
                         <thead>
@@ -351,6 +345,7 @@ const RenderRequirementsTab = ({ ...props }) => {
                             <th>Descripción</th>
                             <th>Prioridad</th>
                             <th>Asignado</th>
+                            <th>Sprint</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -362,7 +357,9 @@ const RenderRequirementsTab = ({ ...props }) => {
 
                             return (
                               <tr
-                                style={{ cursor: editingTasks ? "default" : undefined }}
+                                style={{
+                                  cursor: editingTasks ? "default" : undefined,
+                                }}
                                 key={task.id}
                                 draggable={!deleteMode && !editingTasks}
                                 onDragStart={
@@ -387,7 +384,8 @@ const RenderRequirementsTab = ({ ...props }) => {
                                 }
                                 onDrop={
                                   !deleteMode && !editingTasks
-                                    ? (e) => handleDrop(e, index, selectedItem.id)
+                                    ? (e) =>
+                                        handleDrop(e, index, selectedItem.id)
                                     : null
                                 }
                                 onDragEnd={
@@ -588,6 +586,44 @@ const RenderRequirementsTab = ({ ...props }) => {
                                     </select>
                                   )}
                                 </td>
+                                <td>
+                                  {editingTasks ? (
+                                    <select
+                                      className="assignee-dropdown-button"
+                                      value={
+                                        task.sprint === undefined ||
+                                        task.sprint === null
+                                          ? ""
+                                          : task.sprint
+                                      }
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === "") {
+                                          handleTaskEditChange(
+                                            task.id,
+                                            "sprint",
+                                            "N/A"
+                                          );
+                                        } else {
+                                          handleTaskEditChange(
+                                            task.id,
+                                            "sprint",
+                                            Number(value)
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <option value="">N/A</option>
+                                      {Array.from({ length: project?.sprintNumber || 3 }, (_, i) => (
+                                        <option key={i + 1} value={i + 1}>
+                                          {i + 1}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    task.sprint ?? "N/A"
+                                  )}
+                                </td>
                               </tr>
                             );
                           })}
@@ -605,13 +641,6 @@ const RenderRequirementsTab = ({ ...props }) => {
 
             {!showTaskForm ? (
               <div className="popup-footer">
-                {saveStatus.success && (
-                  <div className="save-success">¡Cambios guardados!</div>
-                )}
-                {saveStatus.error && (
-                  <div className="save-error">{saveStatus.error}</div>
-                )}
-
                 {editing ? (
                   <>
                     <button

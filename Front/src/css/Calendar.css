@@ -1,0 +1,169 @@
+/* Contenedor principal */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  h1 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+    color: #5d3a7f; /* Color principal del título */
+  }
+  
+  /* Tarjetas de eventos */
+  .cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  .card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 300px;
+    text-align: left;
+  }
+  
+  .card p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #333; /* Color del texto */
+  }
+  
+  /* Estilos para el iframe del calendario */
+  iframe {
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+  }
+  
+  /* Botón para agregar eventos */
+  .add-event-button {
+    padding: 10px 20px;
+    background-color: #9e72be; /* Color principal del botón */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .add-event-button:hover {
+    background-color: #8d60b4; /* Hover más oscuro */
+  }
+  
+  /* Popup Overlay */
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Popup Content */
+  .popup-content {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Close Button */
+  .popup-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #666;
+    cursor: pointer;
+  }
+  
+  /* Popup Title */
+  .popup-title {
+    color: #5d3a7f; /* Color principal del título */
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Footer Buttons */
+  .popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .popup-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .popup-button.primary {
+    background-color: #9e72be; /* Color principal */
+    color: white;
+  }
+  
+  .popup-button.primary:hover {
+    background-color: #8d60b4; /* Hover más oscuro */
+  }
+  
+  .popup-button.secondary {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .popup-button.secondary:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .popup-button.delete {
+    background-color: #dc3545; /* Color rojo para borrar */
+    color: white;
+  }
+  
+  .popup-button.delete:hover {
+    background-color: #c82333; /* Hover más oscuro */
+  }
+
+  /* Botón para agregar eventos */
+.add-event-button {
+    padding: 10px 20px;
+    background-color: #9e72be; /* Color principal del botón */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 20px auto; /* Centra el botón horizontalmente */
+    display: block; /* Asegura que el botón se comporte como un bloque */
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  
+  .add-event-button:hover {
+    background-color: #8d60b4; /* Hover más oscuro */
+  }

@@ -12,7 +12,7 @@ function RevisionIA() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("RNF");
+  const [activeTab, setActiveTab] = useState("HU");
   const [expandedTab, setExpandedTab] = useState(null);
   const [showDeleteIcons, setShowDeleteIcons] = useState(false);
   const [projectData, setProjectData] = useState(null);
@@ -66,12 +66,22 @@ function RevisionIA() {
       fechaCreacion:
         data.fechaCreacion || new Date().toISOString().split("T")[0],
       sprintNumber: data.sprintNumber || 0,
+      sprintDuration: data.sprintDuration || 2,
       EP: parseSection(data.EP || data.epics),
       RF: parseSection(data.RF || data.functionalRequirements),
       RNF: parseSection(data.RNF || data.nonFunctionalRequirements),
       HU: parseSection(data.HU || data.userStories),
     };
   };
+
+  const handleCancelProjectEdit = () => {
+  setEditingProject(false);
+  // Restaurar los datos originales si es necesario
+  const sessionData = sessionStorage.getItem("projectData");
+  if (sessionData) {
+    setProjectData(JSON.parse(sessionData));
+  }
+};
 
   const handleDragStart = (item) => {
     setDraggedItem(item);
@@ -271,18 +281,36 @@ function RevisionIA() {
     setEditTasksData((prev) => {
       const arr = [...prev];
       const t = { ...arr[index] };
-      if (field === "id") {
-        t.id = value;
-      } else if (field === "title") {
-        t.title = value;
-        t.titulo = value;
-      } else if (field === "description") {
-        t.descripcion = value;
-        delete t.data;
-        delete t.description;
-      } else if (field === "priority") {
-        t.priority = value;
-        t.prioridad = value;
+      switch (field) {
+        case "id":
+          t.id = value;
+          break;
+        case "title":
+          t.title = value;
+          t.titulo = value; // Aseguramos que el campo titulo también se actualice
+          break;
+        case "description":
+          t.descripcion = value;
+          delete t.data; // Aseguramos que data no se use
+          delete t.description; // Aseguramos que description no se use
+          break;
+        case "priority":
+          t.priority = value;
+          t.prioridad = value; // Aseguramos que el campo prioridad también se actualice
+          break;
+        case "sprint":
+          // Forzar sprint a ser un número y validarlo
+          let sprintValue = Number(value);
+          if (projectData && typeof projectData.sprintNumber === "number") {
+            if (sprintValue > projectData.sprintNumber)
+              sprintValue = projectData.sprintNumber;
+            if (sprintValue < 0) sprintValue = 0;
+          }
+          t.sprint = sprintValue;
+          break;
+        default:
+          console.warn(`Campo desconocido: ${field}`);
+          return prev; // No hacer nada si el campo es desconocido
       }
       arr[index] = t;
       return arr;
@@ -364,11 +392,11 @@ function RevisionIA() {
       const userId = localStorage.getItem("userId");
 
       if (!userId) {
-        setError("No se encontró el ID de usuario en el almacenamiento local."); // Muestra el popup de error
+        setError("No se encontró el ID de usuario en el almacenamiento local.");
         return;
       }
 
-      // Hacer Post al proyecto
+      // 1. Guardar el proyecto en la base de datos
       const response = await fetch(`${BACKEND_URL}/projectsFB/`, {
         method: "POST",
         headers: {
@@ -380,18 +408,14 @@ function RevisionIA() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(
-          `Error al guardar el proyecto: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al guardar el proyecto: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
       const projectResponse = await response.json();
       const projectId = projectResponse.id;
 
-      // Linkear el proyecto al usuario
+      // 2. Vincular el proyecto al usuario
       const linkResponse = await fetch(
         `${BACKEND_URL}/projectsFB/linkUserToProject`,
         {
@@ -409,19 +433,27 @@ function RevisionIA() {
 
       if (!linkResponse.ok) {
         const errorData = await linkResponse.json();
-        setError(
-          `Error al vincular el proyecto al usuario: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al vincular el proyecto al usuario: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
+
       setSuccessMessage("Proyecto guardado exitosamente."); // Muestra el popup de éxito
+      setTimeout(() => navigate("/home"), 2000); // Redirige a la página de inicio después de 2 segundos
+
       sessionStorage.removeItem("projectData");
+      
+      // Mostrar mensaje de éxito y luego navegar
+      setSuccessMessage("Proyecto guardado exitosamente. Redirigiendo...");
+      
+      // Redirigir después de 2 segundos (para que el usuario vea el mensaje)
+      setTimeout(() => {
+        navigate(`/project/${projectId}`);
+      }, 2000);
+
     } catch (error) {
       console.error("Error al guardar el proyecto:", error);
-      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo."); // Muestra el popup de error
+      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo.");
     }
   };
 
@@ -431,7 +463,6 @@ function RevisionIA() {
 
   const closeSuccessPopup = () => {
     setSuccessMessage(null); // Cierra el popup de éxito
-    navigate("/home");
   };
 
   const handleSaveProjectChanges = async () => {
@@ -575,21 +606,30 @@ function RevisionIA() {
           </>
         )}
         <div className="center-button-container">
-          <button
-            className="edit-project-button"
-            onClick={
-              editingProject
-                ? handleSaveProjectChanges
-                : () => setEditingProject(true)
-            }
-            disabled={saveStatus.loading}
-          >
-            {editingProject
-              ? saveStatus.loading
-                ? "Guardando..."
-                : "Guardar Cambios"
-              : "Editar Proyecto"}
-          </button>
+          {editingProject ? (
+            <>
+              <button
+                className="edit-project-button cancel"
+                onClick={handleCancelProjectEdit}
+              >
+                Cancelar
+              </button>
+              <button
+                className="edit-project-button"
+                onClick={handleSaveProjectChanges}
+                disabled={saveStatus.loading}
+              >
+                {saveStatus.loading ? "Guardando..." : "Guardar Cambios"}
+              </button>
+            </>
+          ) : (
+            <button
+              className="edit-project-button"
+              onClick={() => setEditingProject(true)}
+            >
+              Editar Proyecto
+            </button>
+          )}
         </div>
         {saveStatus.success && (
           <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
@@ -754,6 +794,7 @@ function RevisionIA() {
                             <th>Título</th>
                             <th>Descripción</th>
                             <th>Prioridad</th>
+                            <th>Sprint</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -830,6 +871,26 @@ function RevisionIA() {
                                         ""
                                       ).slice(1)}
                                   </span>
+                                )}
+                              </td>
+                              <td>
+                                {editing ? (
+                                  <input
+                                    type="number"
+                                    value={task.sprint || ""}
+                                    onChange={(e) =>
+                                      handleTaskChange(
+                                        i,
+                                        "sprint",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="edit-input"
+                                    min="0"
+                                    max={projectData.sprintNumber}
+                                  />
+                                ) : (
+                                  task.sprint || "N/A"
                                 )}
                               </td>
                             </tr>

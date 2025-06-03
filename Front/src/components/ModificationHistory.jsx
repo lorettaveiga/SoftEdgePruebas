@@ -20,7 +20,6 @@ const ModificationHistory = ({ projectId }) => {
           throw new Error("Error al cargar el historial");
         }
         const data = await response.json();
-        console.log("Historial recibido:", data.modificationHistory);
         setHistory(data.modificationHistory || []);
       } catch (err) {
         setError(err.message);
@@ -72,47 +71,124 @@ const ModificationHistory = ({ projectId }) => {
           const id = change.id;
           if (change.changes.nuevo) {
             items.push(
-              <li key={key + id + "nuevo"}>
+              <li key={`${key}-${id}-nuevo`}>
                 Se agregó {getRequirementTypeSingular(key)} con ID <b>{id}</b>
               </li>
             );
           } else if (change.changes.eliminado) {
             items.push(
-              <li key={key + id + "eliminado"}>
+              <li key={`${key}-${id}-eliminado`}>
                 Se eliminó {getRequirementTypeSingular(key)} con ID <b>{id}</b>
               </li>
             );
           } else {
             Object.entries(change.changes).forEach(([field, vals]) => {
-              const fieldLabel =
-                field === "data"
-                  ? "descripción"
-                  : field === "titulo"
-                  ? "título"
-                  : field;
-              items.push(
-                <li key={key + id + field}>
-                  En {getRequirementTypeSingular(key)} <b>{id}</b>, se cambió{" "}
-                  <b>{fieldLabel}</b> de "{vals.oldValue}" a "{vals.newValue}"
-                </li>
-              );
+              if (
+                vals &&
+                typeof vals === "object" &&
+                vals.oldValue !== undefined &&
+                vals.newValue !== undefined
+              ) {
+                const fieldLabel =
+                  field === "data"
+                    ? "descripción"
+                    : field === "titulo"
+                    ? "título"
+                    : field === "tasks"
+                    ? "tareas"
+                    : field;
+
+                // Handle different types of values
+                let oldValueDisplay, newValueDisplay;
+
+                if (field === "tasks") {
+                  // For tasks, just show that tasks were modified
+                  oldValueDisplay = Array.isArray(vals.oldValue)
+                    ? `${vals.oldValue.length} tareas`
+                    : "tareas";
+                  newValueDisplay = Array.isArray(vals.newValue)
+                    ? `${vals.newValue.length} tareas`
+                    : "tareas";
+                } else if (
+                  Array.isArray(vals.oldValue) ||
+                  Array.isArray(vals.newValue)
+                ) {
+                  // For other arrays, show count
+                  oldValueDisplay = Array.isArray(vals.oldValue)
+                    ? `${vals.oldValue.length} elementos`
+                    : String(vals.oldValue);
+                  newValueDisplay = Array.isArray(vals.newValue)
+                    ? `${vals.newValue.length} elementos`
+                    : String(vals.newValue);
+                } else if (
+                  typeof vals.oldValue === "object" ||
+                  typeof vals.newValue === "object"
+                ) {
+                  // For objects, show a generic message
+                  oldValueDisplay = "configuración anterior";
+                  newValueDisplay = "configuración nueva";
+                } else {
+                  // For primitive values, convert to string
+                  oldValueDisplay = String(vals.oldValue);
+                  newValueDisplay = String(vals.newValue);
+                }
+
+                if (field === "tasks") {
+                  items.push(
+                    <li key={`${key}-${id}-${field}`}>
+                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se
+                      modificaron las tareas ({oldValueDisplay} →{" "}
+                      {newValueDisplay})
+                    </li>
+                  );
+                } else {
+                  items.push(
+                    <li key={`${key}-${id}-${field}`}>
+                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se
+                      cambió <b>{fieldLabel}</b> de "{oldValueDisplay}" a "
+                      {newValueDisplay}"
+                    </li>
+                  );
+                }
+              }
             });
           }
         });
-      } else {
+      } else if (value && typeof value === "object") {
         switch (key) {
           case "nombreProyecto":
-            items.push(
-              <li key={key}>
-                Se cambió el nombre del proyecto de "{value.oldValue}" a "
-                {value.newValue}"
-              </li>
-            );
+            if (value.oldValue !== undefined && value.newValue !== undefined) {
+              items.push(
+                <li key={key}>
+                  Se cambió el nombre del proyecto de "{String(value.oldValue)}"
+                  a "{String(value.newValue)}"
+                </li>
+              );
+            }
             break;
           case "descripcion":
-            items.push(
-              <li key={key}>Se modificó la descripción del proyecto</li>
-            );
+            if (value.oldValue !== undefined && value.newValue !== undefined) {
+              items.push(
+                <li key={key}>
+                  Se cambió la descripción del proyecto de "
+                  {String(value.oldValue)}" a "{String(value.newValue)}"
+                </li>
+              );
+            } else {
+              items.push(
+                <li key={key}>Se modificó la descripción del proyecto</li>
+              );
+            }
+            break;
+          case "sprintDuration":
+            if (value.oldValue !== undefined && value.newValue !== undefined) {
+              items.push(
+                <li key={key}>
+                  Se cambió la duración de sprints de {String(value.oldValue)}{" "}
+                  semanas a {String(value.newValue)} semanas
+                </li>
+              );
+            }
             break;
           case "EP":
           case "RF":
@@ -123,8 +199,12 @@ const ModificationHistory = ({ projectId }) => {
             );
             break;
           default:
+            // For unknown object fields, show a generic message
             items.push(<li key={key}>Se modificó {key}</li>);
         }
+      } else {
+        // Handle primitive values
+        items.push(<li key={key}>Se modificó {key}</li>);
       }
     });
     return <ul className="change-list">{items}</ul>;
