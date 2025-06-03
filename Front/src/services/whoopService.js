@@ -69,8 +69,7 @@ class WhoopService {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    withCredentials: true,
-                    credentials: 'include'
+                    withCredentials: true
                 }
             );
             console.log('Token exchange response:', response.data);
