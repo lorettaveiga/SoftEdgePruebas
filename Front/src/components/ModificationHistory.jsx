@@ -64,9 +64,23 @@ const ModificationHistory = ({ projectId }) => {
   };
 
   const renderChangeList = (changes) => {
+    if (!changes || typeof changes !== "object") {
+      return <ul className="change-list"><li>No hay cambios registrados</li></ul>;
+    }
+
     const items = [];
     Object.entries(changes).forEach(([key, value]) => {
-      if (Array.isArray(value) && ["EP", "RF", "RNF", "HU"].includes(key)) {
+      if (key === "MEMBER_ADDED" || key === "MEMBER_REMOVED") {
+        // Manejar cambios de miembros
+        value.forEach((memberChange, index) => {
+          const action = key === "MEMBER_ADDED" ? "agregó" : "removió";
+          items.push(
+            <li key={`${key}-${index}`}>
+              Se {action} a <b>{memberChange.name} {memberChange.lastname || ""}</b> ({memberChange.email}) del equipo del proyecto.
+            </li>
+          );
+        });
+      } else if (Array.isArray(value) && ["EP", "RF", "RNF", "HU"].includes(key)) {
         value.forEach((change) => {
           const id = change.id;
           if (change.changes.nuevo) {
