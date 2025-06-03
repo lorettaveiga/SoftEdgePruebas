@@ -877,3 +877,73 @@ icono se hace blanco hover
   transform: translateY(-2px);
 }
 
+.biometricos {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.biometricos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.biometricos-header h1 {
+  color: #333;
+  margin: 0;
+  font-size: 24px;
+}
+
+.biometricos-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.biometricos-action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.biometricos-action-button svg {
+  font-size: 20px;
+}
+
+/* Estilo específico para el botón de equipo */
+.biometricos-action-button:first-child {
+  background-color: #7a5a96;
+  color: white;
+}
+
+.biometricos-action-button:first-child:hover {
+  background-color: #6a4a86;
+}
+
+/* Estilo específico para el botón de descarga */
+.biometricos-action-button:nth-child(2) {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.biometricos-action-button:nth-child(2):hover {
+  background-color: #45a049;
+}
+
+/* Estilo específico para el botón de cerrar sesión */
+.biometricos-action-button:last-child {
+  background-color: #f44336;
+  color: white;
+}
+
+.biometricos-action-button:last-child:hover {
+  background-color: #da190b;
+}
+

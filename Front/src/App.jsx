@@ -18,6 +18,7 @@ import ResumenSemanal from "./pages/ResumenSemanal";
 import LoginWhoop from './pages/LoginWhoop';
 import CallbackWhoop from './pages/CallbackWhoop';
 import Calendar from "./pages/Calendar";
+import TeamDashboard from './pages/TeamDashboard';
 
 function App() {
   const { isLogin } = useContext(AuthContext);
@@ -59,6 +60,7 @@ function App() {
           <Route path="/whoop-login" element={<LoginWhoop />} />
           <Route path="/whoop-callback" element={<CallbackWhoop />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/team-dashboard" element={<TeamDashboard />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

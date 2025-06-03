@@ -5,6 +5,7 @@ import TopAppBar from '../components/TopAppBar';
 import whoopService from '../services/whoopService';
 import DownloadIcon from '@mui/icons-material/Download';
 import LogoutIcon from '@mui/icons-material/Logout';
+import GroupIcon from '@mui/icons-material/Group';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -768,154 +769,118 @@ const Biometricos = () => {
   if (error) return <div className="biometricos-error">{error}</div>;
 
   return (
-    <>
-      <TopAppBar />
-      <div className="main-title" style={{ marginBottom: '28px' }}>
-        <h1>
-          Biométricos{userProfile ? ` de ${userProfile.first_name} ${userProfile.last_name}` : ''}
-        </h1>
-      </div>
-      {/* Barra de tabs y botón de descargar alineados en la misma fila, dentro del container */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        maxWidth: '1100px',
-        margin: '0 auto 8px auto',
-        padding: '10px 24px'
-      }}>
-        <div className="biometricos-tabs">
-          <button onClick={()=>setTab('day')} className={tab==='day' ? 'active' : ''}>Ayer</button>
-          <button onClick={()=>setTab('week')} className={tab==='week' ? 'active' : ''}>Semana</button>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button 
-            className="download-button" 
-            onClick={generatePDF}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 22px',
-              background: '#7a5a96',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 600,
-              boxShadow: '0 2px 8px #ede3f6',
-              letterSpacing: '0.5px'
-            }}
-          >
-            <DownloadIcon /> Descargar PDF
-          </button>
-          {localStorage.getItem('role') === 'admin' && (
+    <div className="biometricos">
+      <TopAppBar title="Biométricos" />
+      <div className="biometricos-container">
+        <div className="biometricos-header">
+          <h1>Mis Biométricos</h1>
+          <div className="biometricos-actions">
             <button 
-              className="logout-button" 
+              className="biometricos-action-button"
+              onClick={() => navigate('/team-dashboard')}
+              style={{ marginRight: '10px' }}
+            >
+              <GroupIcon />
+              Ver Equipo
+            </button>
+            <button 
+              className="biometricos-action-button"
+              onClick={generatePDF}
+            >
+              <DownloadIcon />
+              Descargar PDF
+            </button>
+            <button 
+              className="biometricos-action-button"
               onClick={() => {
                 whoopService.logout();
                 navigate('/whoop-login');
               }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 22px',
-                background: '#e17055',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(225, 112, 85, 0.2)',
-                letterSpacing: '0.5px'
-              }}
             >
-              <LogoutIcon /> Cerrar Sesión
+              <LogoutIcon />
+              Cerrar Sesión
             </button>
-          )}
+          </div>
         </div>
-      </div>
-      <div className="biometricos-container biometricos-content">
-        {tab==='day' && (
-          <>
-          <div className="biometricos-day-cards">
-            <div className="biometricos-day-group">
-              <MainCard
-                label="RECUPERACIÓN"
-                value={recoveryPct}
-                color="#7a5a96"
-                onClick={()=>setShowRecoveryPopup(true)}
-              />
-                {showMetrics && (
-                  <>
-                    <MetricCard 
-                      label="VFC" value={hrv} unit="ms" icon="favorite_border" color="#7a5a96"
-                      expanded={expandedMetric === 'VFC'}
-                      onExpand={() => setExpandedMetric(expandedMetric === 'VFC' ? null : 'VFC')}
-                      description={metricDescriptions['VFC']}
-                    />
-                    <MetricCard 
-                      label="FCR" value={rhr} unit="lpm" icon="favorite" color="#7a5a96"
-                      expanded={expandedMetric === 'FCR'}
-                      onExpand={() => setExpandedMetric(expandedMetric === 'FCR' ? null : 'FCR')}
-                      description={metricDescriptions['FCR']}
-                    />
-                  </>
-                )}
-            </div>
-            <div className="biometricos-day-group">
-              <MainCard
-                label="DESEMPEÑO DEL SUEÑO"
-                value={sleepPerfPct}
-                color="#7a5a96"
-                onClick={()=>setShowSleepPopup(true)}
-              />
-                {showMetrics && (
-                  <>
-                    <MetricCard 
-                      label="Sueño Profundo" value={sleepDeep} unit="h" icon="hotel" color="#7a5a96"
-                      expanded={expandedMetric === 'Sueño Profundo'}
-                      onExpand={() => setExpandedMetric(expandedMetric === 'Sueño Profundo' ? null : 'Sueño Profundo')}
-                      description={metricDescriptions['Sueño Profundo']}
-                    />
-                    <MetricCard 
-                      label="Duración del Sueño" value={sleepDuration} unit="h" icon="schedule" color="#7a5a96"
-                      expanded={expandedMetric === 'Duración del Sueño'}
-                      onExpand={() => setExpandedMetric(expandedMetric === 'Duración del Sueño' ? null : 'Duración del Sueño')}
-                      description={metricDescriptions['Duración del Sueño']}
-                    />
-                  </>
-                )}
-            </div>
-            <div className="biometricos-day-group">
-              <MainCard
-                label="ESFUERZO"
-                value={strain}
-                color="#7a5a96"
-                onClick={()=>setShowStrainPopup(true)}
-              />
-                {showMetrics && (
-                  <MetricCard 
-                    label="Calorías" value={validatedCalories} unit="kcal" icon="local_fire_department" color="#7a5a96"
-                    expanded={expandedMetric === 'Calorías'}
-                    onExpand={() => setExpandedMetric(expandedMetric === 'Calorías' ? null : 'Calorías')}
-                    description={metricDescriptions['Calorías']}
-                  />
-                )}
+        <div className="biometricos-content">
+          {tab==='day' && (
+            <>
+            <div className="biometricos-day-cards">
+              <div className="biometricos-day-group">
+                <MainCard
+                  label="RECUPERACIÓN"
+                  value={recoveryPct}
+                  color="#7a5a96"
+                  onClick={()=>setShowRecoveryPopup(true)}
+                />
+                  {showMetrics && (
+                    <>
+                      <MetricCard 
+                        label="VFC" value={hrv} unit="ms" icon="favorite_border" color="#7a5a96"
+                        expanded={expandedMetric === 'VFC'}
+                        onExpand={() => setExpandedMetric(expandedMetric === 'VFC' ? null : 'VFC')}
+                        description={metricDescriptions['VFC']}
+                      />
+                      <MetricCard 
+                        label="FCR" value={rhr} unit="lpm" icon="favorite" color="#7a5a96"
+                        expanded={expandedMetric === 'FCR'}
+                        onExpand={() => setExpandedMetric(expandedMetric === 'FCR' ? null : 'FCR')}
+                        description={metricDescriptions['FCR']}
+                      />
+                    </>
+                  )}
               </div>
-            </div>
-            <button 
-              className="main-button" 
-              onClick={() => setShowMetrics(!showMetrics)}
-            >
-              {showMetrics ? 'Ocultar métricas detalladas' : 'Ver métricas detalladas'}
-            </button>
-          </>
-        )}
-        {tab==='week' && renderWeeklySummary()}
+              <div className="biometricos-day-group">
+                <MainCard
+                  label="DESEMPEÑO DEL SUEÑO"
+                  value={sleepPerfPct}
+                  color="#7a5a96"
+                  onClick={()=>setShowSleepPopup(true)}
+                />
+                  {showMetrics && (
+                    <>
+                      <MetricCard 
+                        label="Sueño Profundo" value={sleepDeep} unit="h" icon="hotel" color="#7a5a96"
+                        expanded={expandedMetric === 'Sueño Profundo'}
+                        onExpand={() => setExpandedMetric(expandedMetric === 'Sueño Profundo' ? null : 'Sueño Profundo')}
+                        description={metricDescriptions['Sueño Profundo']}
+                      />
+                      <MetricCard 
+                        label="Duración del Sueño" value={sleepDuration} unit="h" icon="schedule" color="#7a5a96"
+                        expanded={expandedMetric === 'Duración del Sueño'}
+                        onExpand={() => setExpandedMetric(expandedMetric === 'Duración del Sueño' ? null : 'Duración del Sueño')}
+                        description={metricDescriptions['Duración del Sueño']}
+                      />
+                    </>
+                  )}
+              </div>
+              <div className="biometricos-day-group">
+                <MainCard
+                  label="ESFUERZO"
+                  value={strain}
+                  color="#7a5a96"
+                  onClick={()=>setShowStrainPopup(true)}
+                />
+                  {showMetrics && (
+                    <MetricCard 
+                      label="Calorías" value={validatedCalories} unit="kcal" icon="local_fire_department" color="#7a5a96"
+                      expanded={expandedMetric === 'Calorías'}
+                      onExpand={() => setExpandedMetric(expandedMetric === 'Calorías' ? null : 'Calorías')}
+                      description={metricDescriptions['Calorías']}
+                    />
+                  )}
+                </div>
+              </div>
+              <button 
+                className="main-button" 
+                onClick={() => setShowMetrics(!showMetrics)}
+              >
+                {showMetrics ? 'Ocultar métricas detalladas' : 'Ver métricas detalladas'}
+              </button>
+            </>
+          )}
+          {tab==='week' && renderWeeklySummary()}
+        </div>
       </div>
       {showRecoveryPopup && yesterdayRecovery && (
         <RecoveryDetailPopup onClose={()=>setShowRecoveryPopup(false)} data={yesterdayRecovery} />
@@ -960,7 +925,7 @@ const Biometricos = () => {
         />
       )}
       <WorkoutDetailPopup open={showWorkoutPopup} onClose={()=>setShowWorkoutPopup(false)} workouts={weekWorkouts} sportMap={sportMap} />
-    </>
+    </div>
   );
 };
 
