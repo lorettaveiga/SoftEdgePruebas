@@ -134,7 +134,7 @@ const SprintBacklog = () => {
     if (projectId) {
       fetchData();
     }
-  }, [projectId]);
+  }, [projectId, allTasks]); 
 
   const handleSprintClick = (sprint) => {
     console.log("Sprint seleccionado:", sprint);
