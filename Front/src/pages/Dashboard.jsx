@@ -1435,9 +1435,8 @@ const Dashboard = () => {
       if (tasksInLastSprint.length > 0 && availableSprints.length > 0) {
         // Close reassignment popup before showing spinner
         setShowTaskReassignmentPopup(true);
-        setDeletingSprint(true); // Show spinner
       } else {
-        // If no tasks or no available sprints, proceed with deletion
+        setDeletingSprint(true); // Show spinner only if no reassignment is needed
         await performSprintDeletion(currentSprintCount, {});
       }
     } catch (error) {
@@ -1595,14 +1594,9 @@ const Dashboard = () => {
 
   // Handle task reassignment confirmation
   const handleTaskReassignmentConfirm = async (taskAssignments) => {
-    // Close the reassignment popup
     setShowTaskReassignmentPopup(false);
-
-    // Show spinner
-    setDeletingSprint(true);
-
+    setDeletingSprint(true); // Show spinner after reassignment
     await performSprintDeletion(sprintToDeleteDashboard, taskAssignments);
-
     setTasksToReassign([]);
     setSprintToDeleteDashboard(null);
   };
