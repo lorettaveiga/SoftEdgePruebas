@@ -198,7 +198,7 @@ class WhoopService {
 
             const response = await axios({
                 method,
-                url: `${WHOOP_CONFIG.apiBaseUrl}${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+                url: `${WHOOP_CONFIG.backendUrl}/whoop/${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
                 headers: await this.getHeaders()
             });
 
@@ -211,7 +211,7 @@ class WhoopService {
                     // Retry the request with new token
                     const response = await axios({
                         method,
-                        url: `${WHOOP_CONFIG.apiBaseUrl}${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+                        url: `${WHOOP_CONFIG.backendUrl}/whoop/${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
                         headers: await this.getHeaders()
                     });
                     return response.data;
@@ -227,7 +227,7 @@ class WhoopService {
 
     async getSleepData(start, end) {
         try {
-            return await this.makeAuthenticatedRequest('GET', '/activity/sleep', { start, end });
+            return await this.makeAuthenticatedRequest('GET', 'sleep', { start, end });
         } catch (error) {
             console.error('Error obteniendo datos de sueño:', error);
             throw error;
@@ -236,7 +236,7 @@ class WhoopService {
 
     async getProfile() {
         try {
-            return await this.makeAuthenticatedRequest('GET', '/user/profile/basic');
+            return await this.makeAuthenticatedRequest('GET', 'profile');
         } catch (error) {
             console.error('Error obteniendo perfil:', error);
             throw error;
@@ -258,7 +258,7 @@ class WhoopService {
 
     async getCycles(start, end) {
         try {
-            return await this.makeAuthenticatedRequest('GET', '/cycle', { start, end });
+            return await this.makeAuthenticatedRequest('GET', 'cycle', { start, end });
         } catch (error) {
             console.error('Error obteniendo ciclos:', error);
             throw error;
@@ -267,7 +267,7 @@ class WhoopService {
 
     async getRecoveryData(start, end) {
         try {
-            return await this.makeAuthenticatedRequest('GET', '/recovery', { start, end });
+            return await this.makeAuthenticatedRequest('GET', 'recovery', { start, end });
         } catch (error) {
             console.error('Error obteniendo recuperación:', error);
             throw error;
@@ -276,7 +276,7 @@ class WhoopService {
 
     async getWorkouts(start, end) {
         try {
-            return await this.makeAuthenticatedRequest('GET', '/activity/workout', { start, end });
+            return await this.makeAuthenticatedRequest('GET', 'workout', { start, end });
         } catch (error) {
             console.error('Error obteniendo workouts:', error);
             throw error;
