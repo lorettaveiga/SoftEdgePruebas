@@ -113,7 +113,6 @@ export const exchangeWhoopToken = async (req, res) => {
           "a315fb94189d174a4ef205b479199c28e496d9fa575bed088d70911f0de0fb35",
         grant_type: "authorization_code",
         code,
-
         redirect_uri: `${FRONT_URL}/whoop-callback`,
       }),
       {
@@ -129,6 +128,12 @@ export const exchangeWhoopToken = async (req, res) => {
       throw new Error("No access token received from WHOOP");
     }
 
+    // Set CORS headers explicitly for this response
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+
     res.json(response.data);
   } catch (error) {
     console.error("Error exchanging WHOOP token:", {
@@ -136,6 +141,12 @@ export const exchangeWhoopToken = async (req, res) => {
       data: error.response?.data,
       message: error.message,
     });
+
+    // Set CORS headers for error response as well
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
 
     if (error.response?.status === 400) {
       return res.status(400).json({
