@@ -9,11 +9,6 @@ const SprintDetails = ({
   projectId,
   fetchAllTasks,
 }) => {
-  console.log("Props recibidas en SprintDetails:", {
-    sprint,
-    sprintTasks,
-    projectId,
-  });
   const [draggedTask, setDraggedTask] = useState(null);
 
   // Manejar el inicio del arrastre de una tarea

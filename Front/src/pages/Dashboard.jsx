@@ -131,8 +131,10 @@ const Dashboard = () => {
   const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] =
     useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
-  const [showDeleteSprintConfirmation, setShowDeleteSprintConfirmation] = useState(false);
-  const [showTaskReassignmentPopup, setShowTaskReassignmentPopup] = useState(false);
+  const [showDeleteSprintConfirmation, setShowDeleteSprintConfirmation] =
+    useState(false);
+  const [showTaskReassignmentPopup, setShowTaskReassignmentPopup] =
+    useState(false);
   const [tasksToReassign, setTasksToReassign] = useState([]);
   const [sprintToDeleteDashboard, setSprintToDeleteDashboard] = useState(null);
 
@@ -968,7 +970,11 @@ const Dashboard = () => {
                 className="delete-sprint-button"
                 onClick={() => setShowDeleteSprintConfirmation(true)}
                 disabled={(project.sprintNumber || 3) <= 1}
-                title={(project.sprintNumber || 3) <= 1 ? "No se puede eliminar el único sprint" : "Eliminar el último sprint"}
+                title={
+                  (project.sprintNumber || 3) <= 1
+                    ? "No se puede eliminar el único sprint"
+                    : "Eliminar el último sprint"
+                }
               >
                 Eliminar Sprint
               </button>
@@ -1176,27 +1182,20 @@ const Dashboard = () => {
 
       // Update project in database with new sprint count
       const updateData = {
-        nombreProyecto: project.nombreProyecto,
-        descripcion: project.descripcion,
         sprintNumber: newSprintNumber,
-        sprintDuration: project.sprintDuration || 2,
-        estatus: project.estatus,
-        fechaCreacion: project.fechaCreacion,
-        // Include all the existing arrays
-        EP: project.EP || [],
-        RF: project.RF || [],
-        RNF: project.RNF || [],
-        HU: project.HU || [],
       };
 
-      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/updateSprintNumber`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update project with new sprint count");
@@ -1246,7 +1245,9 @@ const Dashboard = () => {
       setSuccessMessage("Sprint agregado exitosamente.");
     } catch (error) {
       console.error("Error adding new sprint:", error);
-      setError("Error al agregar el nuevo sprint. Por favor, inténtalo de nuevo.");
+      setError(
+        "Error al agregar el nuevo sprint. Por favor, inténtalo de nuevo."
+      );
     }
   };
 
@@ -1284,10 +1285,12 @@ const Dashboard = () => {
   const handleDeleteLastSprint = async () => {
     try {
       const currentSprintCount = project.sprintNumber || 3;
-      
+
       // Prevent deleting if there's only one sprint
       if (currentSprintCount <= 1) {
-        setError("No se puede eliminar el sprint. Debe haber al menos un sprint en el proyecto.");
+        setError(
+          "No se puede eliminar el sprint. Debe haber al menos un sprint en el proyecto."
+        );
         return;
       }
 
@@ -1310,17 +1313,19 @@ const Dashboard = () => {
       }
 
       // Filter tasks that belong to the sprint being deleted
-      const tasksInLastSprint = allTasks.filter(task => 
-        parseInt(task.sprint, 10) === currentSprintCount
+      const tasksInLastSprint = allTasks.filter(
+        (task) => parseInt(task.sprint, 10) === currentSprintCount
       );
 
       // Set data for task reassignment popup
       setTasksToReassign(tasksInLastSprint);
       setSprintToDeleteDashboard(currentSprintCount);
-      
+
       // Generate available sprints (all except the one being deleted)
-      const availableSprints = sprints.filter(sprint => sprint.number !== currentSprintCount);
-      
+      const availableSprints = sprints.filter(
+        (sprint) => sprint.number !== currentSprintCount
+      );
+
       if (tasksInLastSprint.length > 0 && availableSprints.length > 0) {
         // Show task reassignment popup if there are tasks to reassign
         setShowTaskReassignmentPopup(true);
@@ -1328,7 +1333,7 @@ const Dashboard = () => {
         // If no tasks or no available sprints, proceed with deletion
         await performSprintDeletion(currentSprintCount, {});
       }
-      
+
       setShowDeleteSprintConfirmation(false);
     } catch (error) {
       console.error("Error preparing sprint deletion:", error);
@@ -1358,18 +1363,20 @@ const Dashboard = () => {
           const tasksData = await tasksResponse.json();
           const allTasks = tasksData.tasks || [];
 
-          const updatedTasks = allTasks.map(task => {
-            if (taskAssignments[task.id]) {
-              return {
-                ...task,
-                sprint: taskAssignments[task.id], // Ensure sprint is passed as a number
-              };
-            }
-            return task;
-          }).filter(task => task.sprint !== sprintNumber);
+          const updatedTasks = allTasks
+            .map((task) => {
+              if (taskAssignments[task.id]) {
+                return {
+                  ...task,
+                  sprint: taskAssignments[task.id], // Ensure sprint is passed as a number
+                };
+              }
+              return task;
+            })
+            .filter((task) => task.sprint !== sprintNumber);
 
           const tasksByElement = {};
-          updatedTasks.forEach(task => {
+          updatedTasks.forEach((task) => {
             const key = `${task.requirementType}_${task.elementId}`;
             if (!tasksByElement[key]) {
               tasksByElement[key] = {
@@ -1385,7 +1392,7 @@ const Dashboard = () => {
               prioridad: task.prioridad,
               asignados: task.asignados,
               sprint: task.sprint,
-              estado: task.estado || 'Pendiente',
+              estado: task.estado || "Pendiente",
             });
           });
 
@@ -1408,26 +1415,20 @@ const Dashboard = () => {
 
       // Update project with reduced sprint count
       const updateData = {
-        nombreProyecto: project.nombreProyecto,
-        descripcion: project.descripcion,
         sprintNumber: newSprintNumber,
-        sprintDuration: project.sprintDuration || 2,
-        estatus: project.estatus,
-        fechaCreacion: project.fechaCreacion,
-        EP: project.EP || [],
-        RF: project.RF || [],
-        RNF: project.RNF || [],
-        HU: project.HU || [],
       };
 
-      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/updateSprintNumber`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update project with new sprint count");
@@ -1856,7 +1857,9 @@ const Dashboard = () => {
         <TaskReassignmentPopup
           sprintToDelete={sprintToDeleteDashboard}
           tasksToReassign={tasksToReassign}
-          availableSprints={sprints.filter(sprint => sprint.number !== sprintToDeleteDashboard)}
+          availableSprints={sprints.filter(
+            (sprint) => sprint.number !== sprintToDeleteDashboard
+          )}
           onConfirm={handleTaskReassignmentConfirm}
           onCancel={handleTaskReassignmentCancel}
         />
@@ -1875,7 +1878,8 @@ const Dashboard = () => {
           >
             <h3>Confirmar eliminación de Sprint</h3>
             <p>
-              ¿Estás seguro que deseas eliminar el último sprint (Sprint {project.sprintNumber || 3})?
+              ¿Estás seguro que deseas eliminar el último sprint (Sprint{" "}
+              {project.sprintNumber || 3})?
             </p>
             <div className="confirmation-actions">
               <button

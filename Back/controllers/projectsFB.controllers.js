@@ -408,9 +408,8 @@ export const uploadProjectImage = async (req, res) => {
 };
 
 export const updateTasks = async (req, res) => {
-
   try {
-    const { requirementType, elementId, tasks } = req.body
+    const { requirementType, elementId, tasks } = req.body;
     const projectId = req.params.id;
     const projectRef = db.collection("proyectos").doc(projectId);
     const projectDoc = await projectRef.get();
@@ -599,5 +598,31 @@ export const updateTaskStatus = async (req, res) => {
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
     res.status(500).json({ message: "Error al actualizar la tarea" });
+  }
+};
+
+export const updateSprintNumber = async (req, res) => {
+  const { id } = req.params; // ID del proyecto
+  const { sprintNumber } = req.body; // Nuevo número de sprint
+
+  try {
+    const projectRef = db.collection("proyectos").doc(id);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+      return res.status(404).json({ message: "Proyecto no encontrado" });
+    }
+
+    // Actualiza el número de sprint en el proyecto
+    await projectRef.update({ sprintNumber });
+
+    res
+      .status(200)
+      .json({ message: "Número de sprint actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar el número de sprint:", error);
+    res
+      .status(500)
+      .json({ message: "Error al actualizar el número de sprint" });
   }
 };
