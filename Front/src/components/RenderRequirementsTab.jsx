@@ -288,17 +288,6 @@ const RenderRequirementsTab = ({ ...props }) => {
                   e.stopPropagation();
                   setEditing(true);
                 }}
-                style={{
-                  position: "absolute",
-                  left: "20px",
-                  top: "20px",
-                  backgroundColor: "#f0e6ff",
-                  color: "#5d3a7f",
-                  border: "none",
-                  borderRadius: "4px",
-                  padding: "8px 12px",
-                  cursor: "pointer",
-                }}
               >
                 Editar
               </button>

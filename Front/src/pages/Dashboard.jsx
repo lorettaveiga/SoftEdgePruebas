@@ -27,9 +27,9 @@ const Dashboard = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [showTeamPopup, setShowTeamPopup] = useState(false);
-  const [allTasks, setAllTasks] = useState([]); // Todas las tareas del proyecto
-  const [error, setError] = useState(null); // Estado para manejar el mensaje de error
-  const [successMessage, setSuccessMessage] = useState(null); // Estado para manejar el mensaje de éxito
+  const [allTasks, setAllTasks] = useState([]);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [editing, setEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState({
@@ -37,8 +37,8 @@ const Dashboard = () => {
     error: null,
     success: false,
   });
-  const [sprints, setSprints] = useState([]);
-  const [sprintDuration, setSprintDuration] = useState(2); // Default 2 weeks
+  
+  const [sprintDuration, setSprintDuration] = useState(2);
 
   // Función para generar sprints dinámicamente
   const generateSprints = (
@@ -91,13 +91,65 @@ const Dashboard = () => {
     return sprints;
   };
 
-  const [tasks, setTasks] = useState([]); // Todas las tareas del proyecto
-  const [selectedSprint, setSelectedSprint] = useState(null);
 
+  // Sprint backlog states
+  const [sprints, setSprints] = useState([
+    {
+      number: 1,
+      status: "En progreso",
+      startDate: "2024-04-01",
+      endDate: "2024-04-14",
+      tasks: [
+        {
+          title: "Implementar autenticación",
+          description: "Crear sistema de login y registro",
+          status: "En progreso",
+        },
+        {
+          title: "Diseñar interfaz de usuario",
+          description: "Crear wireframes y mockups",
+          status: "Completado",
+        },
+      ],
+    },
+    {
+      number: 2,
+      status: "Planificado",
+      startDate: "2024-04-15",
+      endDate: "2024-04-28",
+      tasks: [
+        {
+          title: "Desarrollar API",
+          description: "Implementar endpoints principales",
+          status: "Pendiente",
+        },
+        {
+          title: "Configurar base de datos",
+          description: "Crear esquema y migraciones",
+          status: "Pendiente",
+        },
+      ],
+    },
+    {
+      number: 3,
+      status: "Pendiente",
+      startDate: "2024-04-29",
+      endDate: "2024-05-12",
+      tasks: [
+        {
+          title: "Pruebas de integración",
+          description: "Realizar pruebas de sistema completo",
+          status: "Pendiente",
+        },
+      ],
+    },
+  ]);
+  const [tasks, setTasks] = useState([]);
+
+  const [selectedSprint, setSelectedSprint] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
   const [countdown, setCountdown] = useState(3);
-
   const [editData, setEditData] = useState({
     title: "",
     description: "",
@@ -108,7 +160,6 @@ const Dashboard = () => {
     title: "",
     description: "",
   });
-
   const [showMemberMenu, setShowMemberMenu] = useState(null);
   const [editingMember, setEditingMember] = useState(null);
   const [memberAction, setMemberAction] = useState(null);
@@ -119,17 +170,11 @@ const Dashboard = () => {
     priority: "",
     assignee: "",
   });
-
-  // Agregar estos nuevos estados para el manejo de la eliminación de tareas
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
-  // Agregar estos estados para manejar el modo de eliminación
   const [deleteMode, setDeleteMode] = useState(false);
   const [taskToSelect, setTaskToSelect] = useState(null);
-
-  const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] =
-    useState(false);
+  const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [showDeleteSprintConfirmation, setShowDeleteSprintConfirmation] = useState(false);
   const [showTaskReassignmentPopup, setShowTaskReassignmentPopup] = useState(false);
@@ -138,6 +183,7 @@ const Dashboard = () => {
 
   // Estado para manejar el número máximo de tareas
   const [nextTaskNumber, setNextTaskNumber] = useState(0);
+  const [draggedTask, setDraggedTask] = useState(null);
 
   useEffect(() => {
     // Verificar que el usuario sea visitante
@@ -146,14 +192,13 @@ const Dashboard = () => {
     }
   }, []);
 
-  // UseEffect para cargar el proyecto y los miembros del equipo
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       await fetchProject();
-      const projectMembers = await fetchTeamMembers(); // Llamar primero para filtrar usuarios
+      const projectMembers = await fetchTeamMembers();
       await fetchAvailableUsers(projectMembers);
-      await fetchAllTasks(); // Llamar para obtener todas las tareas
+      await fetchAllTasks();
       setLoading(false);
     };
 
@@ -165,13 +210,12 @@ const Dashboard = () => {
     if (successMessage) {
       const timer = setTimeout(() => {
         setSuccessMessage(null);
-      }, 3000); // 3 segundos
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
 
-  // UseEffect para manejar el temporizador de cuenta regresiva
   useEffect(() => {
     if (showProjectDeleteConfirmation) {
       let timer = setInterval(() => {
@@ -194,9 +238,7 @@ const Dashboard = () => {
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setError(
-        "No se encontró un token de autenticación. Por favor, inicia sesión."
-      );
+      setError("No se encontró un token de autenticación. Por favor, inicia sesión.");
       return;
     }
 
@@ -285,7 +327,7 @@ const Dashboard = () => {
         if (!response.ok) throw new Error("Error al cargar las tareas");
 
         const { tasks: dbTasks } = await response.json();
-        setTasks(dbTasks); // Guardar todas las tareas en el estado
+        setTasks(dbTasks);
       } catch (error) {
         console.error("Error al cargar las tareas:", error);
         setError("No se pudieron cargar las tareas del proyecto.");
@@ -327,12 +369,9 @@ const Dashboard = () => {
           lastname: user.lastname,
           role: user.role,
           email: user.email,
-          initials: `${user.username[0] || ""}${
-            user.lastname?.[0] || ""
-          }`.toUpperCase(),
+          initials: `${user.username[0] || ""}${user.lastname?.[0] || ""}`.toUpperCase(),
         }));
 
-        // Filtrar los usuarios que ya son miembros del equipo
         const filteredUsers = mappedUsers.filter(
           (user) => !projectMembers.some((member) => member.id === user.id)
         );
@@ -373,13 +412,11 @@ const Dashboard = () => {
           lastname: member.lastname,
           title: member.title,
           email: member.email,
-          initials: `${member.username[0] || ""}${
-            member.lastname?.[0] || ""
-          }`.toUpperCase(),
+          initials: `${member.username[0] || ""}${member.lastname?.[0] || ""}`.toUpperCase(),
         }));
 
         setTeamMembers(mappedTeamMembers);
-        return mappedTeamMembers; // Devolver los miembros del equipo para filtrar usuarios
+        return mappedTeamMembers;
       } else {
         console.error("Error fetching team members:", data.message);
       }
@@ -405,12 +442,9 @@ const Dashboard = () => {
       if (!resp.ok) throw new Error("Failed to fetch all tasks");
 
       const { tasks: dbTasks } = await resp.json();
-
-      // Guardar las tareas en el estado local
       setAllTasks(dbTasks);
       console.log("Tareas obtenidas:", dbTasks);
 
-      // Calcular el siguiente número de tarea
       const nextTaskNumber = dbTasks.length;
       setNextTaskNumber(nextTaskNumber);
       console.log(nextTaskNumber);
@@ -438,12 +472,10 @@ const Dashboard = () => {
       }));
       setIsEditing(false);
       console.log("Project updated successfully");
-      setSuccessMessage("Proyecto actualizado exitosamente."); // Muestra el popup de éxito
+      setSuccessMessage("Proyecto actualizado exitosamente.");
     } catch (error) {
       console.error("Error updating project:", error);
-      setError(
-        "Error al actualizar el proyecto. Por favor, inténtalo de nuevo."
-      ); // Muestra el popup de error
+      setError("Error al actualizar el proyecto. Por favor, inténtalo de nuevo.");
     }
   };
 
@@ -479,18 +511,16 @@ const Dashboard = () => {
         }),
       });
 
-      const responseData = await response.json(); // Asegurarse de parsear la respuesta
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          responseData.message || "Error al guardar en el servidor"
-        );
+        throw new Error(responseData.message || "Error al guardar en el servidor");
       }
 
       setProject(updatedProject);
       setSaveStatus({ loading: false, error: null, success: true });
       setSuccessMessage("Cambios guardados exitosamente");
-      setShowPopup(false);
+      handleClosePopup(); // Asegurarse de cerrar el popup después de guardar
     } catch (error) {
       console.error("Error al guardar:", error);
       setSaveStatus({
@@ -505,7 +535,6 @@ const Dashboard = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Checar si estamos editando un requerimiento o el proyecto
     if (editing) {
       setRequirementEditData((prev) => ({
         ...prev,
@@ -520,11 +549,11 @@ const Dashboard = () => {
   };
 
   const closeErrorPopup = () => {
-    setError(null); // Cierra el popup de error
+    setError(null);
   };
 
   const closeSuccessPopup = () => {
-    setSuccessMessage(null); // Cierra el popup de éxito
+    setSuccessMessage(null);
   };
 
   const handleItemClick = async (item) => {
@@ -535,7 +564,6 @@ const Dashboard = () => {
     });
     setShowPopup(true);
 
-    // Fetch tasks for this element
     try {
       const resp = await fetch(
         `${BACKEND_URL}/projectsFB/${projectId}/tasks?requirementType=${activeRequirement}&elementId=${item.id}`,
@@ -549,7 +577,6 @@ const Dashboard = () => {
       );
       if (!resp.ok) throw new Error("Failed to fetch tasks");
       const { tasks: dbTasks } = await resp.json();
-      // Mapear al formato de front con prefijo 'T' y padding de 2 dígitos
       const mapped = dbTasks.map((t) => {
         const rawId = t.id.toString();
         const num = rawId.startsWith("T") ? rawId.slice(1) : rawId;
@@ -588,58 +615,88 @@ const Dashboard = () => {
     });
   };
 
-  const handleSaveTeam = async (addedMembers, removedMembers) => {
+  const handleSaveTeam = async (addedMembers, removedMembers, currentUser) => {
     try {
-      // 1) Vincular los nuevos
-      await Promise.all(
-        addedMembers.map((m) =>
+      // 1. Realizar las operaciones de vinculación/desvinculación
+      await Promise.all([
+        ...addedMembers.map(member =>
           fetch(`${BACKEND_URL}/projectsFB/linkUserToProject`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify({ userId: m.id, projectId }),
+            body: JSON.stringify({ userId: member.id, projectId }),
           })
-        )
-      );
-
-      // 2) Desvincular los eliminados
-      await Promise.all(
-        removedMembers.map((m) =>
+        ),
+        ...removedMembers.map(member =>
           fetch(`${BACKEND_URL}/projectsFB/unlinkUserFromProject`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify({ userId: m.id, projectId }),
+            body: JSON.stringify({ userId: member.id, projectId }),
           })
         )
-      );
-
-      // 3) Actualizar estado local
-      setTeamMembers((prev) => [
-        // quitamos los eliminados
-        ...prev.filter(
-          (tm) => !removedMembers.find((rm) => rm.email === tm.email)
-        ),
-        // añadimos los nuevos
-        ...addedMembers,
       ]);
 
-      setAvailableMembers((prev) => [
-        // recuperamos a los eliminados
-        ...removedMembers,
-        // quitamos a los recién añadidos
-        ...prev.filter((am) => !addedMembers.find((m) => m.email === am.email)),
+      // 2. Registrar cambios en el historial
+      await Promise.all([
+        ...addedMembers.map(member =>
+          fetch(`${BACKEND_URL}/projectsFB/${projectId}/history`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              action: "MEMBER_ADDED",
+              userId: currentUser.userId,
+              userName: currentUser.name,
+              userLastname: currentUser.lastname,
+              targetUserId: member.id,
+              details: `Se agregó a ${member.name} ${member.lastname || ''} (${member.email}) al equipo del proyecto`,
+              timestamp: new Date().toISOString(),
+            }),
+          })
+        ),
+        ...removedMembers.map(member =>
+          fetch(`${BACKEND_URL}/projectsFB/${projectId}/history`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              action: "MEMBER_REMOVED",
+              userId: currentUser.userId,
+              userName: currentUser.name,
+              userLastname: currentUser.lastname,
+              targetUserId: member.id,
+              details: `Se removió a ${member.name} ${member.lastname || ''} (${member.email}) del equipo del proyecto`,
+              timestamp: new Date().toISOString(),
+            }),
+          })
+        )
+      ]);
+
+      // 3. Actualizar el estado local
+      setTeamMembers(prev => [
+        ...prev.filter(tm => !removedMembers.some(rm => rm.email === tm.email)),
+        ...addedMembers
+      ]);
+      
+      setAvailableMembers(prev => [
+        ...prev.filter(am => !addedMembers.some(m => m.email === am.email)),
+        ...removedMembers
       ]);
 
       setShowTeamPopup(false);
-      setSuccessMessage("Equipo actualizado correctamente.");
+      setSuccessMessage("Equipo actualizado correctamente");
     } catch (err) {
       console.error(err);
-      setError("No se pudieron guardar los cambios de equipo.");
+      setError("No se pudieron guardar los cambios de equipo");
     }
   };
 
@@ -661,7 +718,6 @@ const Dashboard = () => {
 
   const handleRemoveMember = async (member) => {
     try {
-      // Hacer la llamada a la API para desvincular el usuario del proyecto
       await fetch(`${BACKEND_URL}/projectsFB/unlinkUserFromProject`, {
         method: "POST",
         headers: {
@@ -674,7 +730,6 @@ const Dashboard = () => {
         }),
       });
 
-      // Actualizar el estado de los miembros del equipo y los miembros disponibles
       setTeamMembers((prev) =>
         prev.filter((teamMember) => teamMember.email !== member.email)
       );
@@ -724,20 +779,30 @@ const Dashboard = () => {
     });
     setEditing(false);
     setDeleteMode(false);
+    setRequirementEditData({
+      title: "",
+      description: ""
+    });
+    setSaveStatus({
+      loading: false,
+      error: null,
+      success: false
+    });
+    setIsEditing(false);
   };
 
-  // Agregar un manejador de eventos para el drag and drop
   const handleDragStart = (e, taskId, index) => {
     e.dataTransfer.setData("taskId", taskId);
     e.dataTransfer.setData("index", index);
     e.currentTarget.classList.add("dragging");
+    setDraggedTask({ id: taskId, index });
   };
 
   const handleDragEnd = (e) => {
-    // Eliminar la clase dragging de todos los elementos
     document.querySelectorAll(".dragging").forEach((element) => {
       element.classList.remove("dragging");
     });
+    setDraggedTask(null);
   };
 
   const handleDragOver = (e) => {
@@ -766,9 +831,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("No token found. Please log in.");
-        setError(
-          "No se encontró un token de autenticación. Por favor, inicia sesión."
-        );
+        setError("No se encontró un token de autenticación. Por favor, inicia sesión.");
         return;
       }
 
@@ -779,7 +842,7 @@ const Dashboard = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // Incluye el token aquí
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               taskId: draggedTask.id,
@@ -790,10 +853,7 @@ const Dashboard = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error(
-            "Error al actualizar la tarea en Firestore:",
-            errorData
-          );
+          console.error("Error al actualizar la tarea en Firestore:", errorData);
           setError(errorData.message || "Error al actualizar la tarea.");
         }
       } catch (error) {
@@ -805,9 +865,7 @@ const Dashboard = () => {
     }
   };
 
-  // Modificar la función handleDeleteTask para desactivar el modo eliminación
   const handleDeleteTask = async (taskId, elementId) => {
-    // 1. Actualizar estado local
     const updatedTasksArr = (tasks[elementId] || []).filter(
       (task) => task.id !== taskId
     );
@@ -820,7 +878,6 @@ const Dashboard = () => {
     setTaskToDelete(null);
     setDeleteMode(false);
 
-    // 2. Persistir eliminación en la base de datos
     try {
       const payload = {
         requirementType: activeRequirement,
@@ -830,8 +887,7 @@ const Dashboard = () => {
           titulo: task.title,
           descripcion: task.description,
           prioridad: task.priority,
-          asignados:
-            teamMembers.find((m) => m.email === task.assignee)?.id || null,
+          asignados: teamMembers.find((m) => m.email === task.assignee)?.id || null,
         })),
       };
       await fetch(`${BACKEND_URL}/projectsFB/${projectId}/tasks`, {
@@ -1027,7 +1083,7 @@ const Dashboard = () => {
       saveStatus={saveStatus}
       setSaveStatus={setSaveStatus}
       requirementEditData={requirementEditData}
-      setEditData={setEditData}
+      setRequirementEditData={setRequirementEditData}
       handleSaveEdit={handleSaveEdit}
       handleInputChange={handleInputChange}
       nextTaskNumber={nextTaskNumber}
@@ -1626,6 +1682,40 @@ const Dashboard = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dashboard-loading">
+            <div className="spinner"></div>
+            <p>Cargando proyecto...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dashboard-error">
+            <h2>Proyecto no encontrado</h2>
+            <button onClick={() => navigate("/home")}>Volver al inicio</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       <TopAppBar />
@@ -1751,7 +1841,7 @@ const Dashboard = () => {
           availableMembers={availableMembers}
           teamMembers={teamMembers}
           handleSaveTeam={handleSaveTeam}
-          handleCancelTeam={() => setShowTeamPopup(false)}
+          handleCancelTeam={handleCancelTeam}
           setError={setError}
         />
       )}
@@ -1769,13 +1859,9 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Popup de error */}
       <ErrorPopup message={error} onClose={closeErrorPopup} />
-
-      {/* Popup de éxito */}
       <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
 
-      {/* Confirmación de eliminación de tarea */}
       {showDeleteConfirmation && taskToDelete && (
         <div
           className="popup-overlay"
@@ -1816,6 +1902,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
       {showProjectDeleteConfirmation && (
         <div
           className="popup-overlay"
