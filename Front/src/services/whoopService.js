@@ -12,7 +12,7 @@ const WHOOP_CONFIG = {
     apiBaseUrl: 'https://api.prod.whoop.com/developer/v1',
     backendUrl: window.location.hostname === 'localhost'
         ? 'http://localhost:5001'
-        : 'https://soft-edge-backend.vercel.app',
+        : 'https://soft-edge-back.vercel.app',
     scopes: [
         'read:sleep',
         'read:recovery',
