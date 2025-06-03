@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+// fake commit
+
 export const proxyWhoopRequest = async (req, res) => {
     try {
         const { start, end } = req.query;
@@ -13,10 +15,24 @@ export const proxyWhoopRequest = async (req, res) => {
 
         const accessToken = authHeader.split(' ')[1];
         
+        // Map endpoints to their correct WHOOP API paths
+        const endpointMap = {
+            'sleep': 'activity/sleep',
+            'workout': 'activity/workout',
+            'cycle': 'cycle',
+            'recovery': 'recovery',
+            'profile': 'user/profile/basic'
+        };
+
+        const whoopEndpoint = endpointMap[endpoint];
+        if (!whoopEndpoint) {
+            return res.status(404).json({ error: 'Invalid endpoint' });
+        }
+        
         // Make the request to WHOOP API
         const response = await axios({
             method: 'GET',
-            url: `https://api.prod.whoop.com/developer/v1/${endpoint === 'profile' ? 'user/profile/basic' : endpoint}`,
+            url: `https://api.prod.whoop.com/developer/v1/${whoopEndpoint}`,
             params: endpoint !== 'profile' ? { start, end } : undefined,
             headers: {
                 'Authorization': `Bearer ${accessToken}`
