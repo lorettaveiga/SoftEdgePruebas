@@ -39,6 +39,7 @@ const Dashboard = () => {
   });
   
   const [sprintDuration, setSprintDuration] = useState(2);
+  const [deletingSprint, setDeletingSprint] = useState(false);
 
   // Función para generar sprints dinámicamente
   const generateSprints = (
@@ -1350,6 +1351,9 @@ const Dashboard = () => {
         return;
       }
 
+      // Close the confirmation popup
+      setShowDeleteSprintConfirmation(false);
+
       // Get tasks assigned to the last sprint
       const tasksResponse = await fetch(
         `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
@@ -1383,24 +1387,24 @@ const Dashboard = () => {
       );
 
       if (tasksInLastSprint.length > 0 && availableSprints.length > 0) {
-        // Show task reassignment popup if there are tasks to reassign
+        // Close reassignment popup before showing spinner
         setShowTaskReassignmentPopup(true);
+        setDeletingSprint(true); // Show spinner
       } else {
         // If no tasks or no available sprints, proceed with deletion
         await performSprintDeletion(currentSprintCount, {});
       }
-
-      setShowDeleteSprintConfirmation(false);
     } catch (error) {
       console.error("Error preparing sprint deletion:", error);
       setError("Error al preparar la eliminación del sprint.");
-      setShowDeleteSprintConfirmation(false);
     }
   };
 
   // Function to perform the actual sprint deletion with task reassignments
   const performSprintDeletion = async (sprintNumber, taskAssignments) => {
     try {
+      setDeletingSprint(true); // Show spinner
+      console.log("Spinner")
       const newSprintNumber = sprintNumber - 1;
 
       if (Object.keys(taskAssignments).length > 0) {
@@ -1424,7 +1428,7 @@ const Dashboard = () => {
               if (taskAssignments[task.id]) {
                 return {
                   ...task,
-                  sprint: taskAssignments[task.id], // Ensure sprint is passed as a number
+                  sprint: taskAssignments[task.id],
                 };
               }
               return task;
@@ -1466,6 +1470,9 @@ const Dashboard = () => {
               }),
             });
           }
+
+          // Send updated tasks to Sprint Backlog
+          setAllTasks(updatedTasks);
         }
       }
 
@@ -1535,13 +1542,21 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error deleting sprint:", error);
       setError("Error al eliminar el sprint. Por favor, inténtalo de nuevo.");
+    } finally {
+      setDeletingSprint(false); // Hide spinner
     }
   };
 
   // Handle task reassignment confirmation
   const handleTaskReassignmentConfirm = async (taskAssignments) => {
-    await performSprintDeletion(sprintToDeleteDashboard, taskAssignments);
+    // Close the reassignment popup
     setShowTaskReassignmentPopup(false);
+
+    // Show spinner
+    setDeletingSprint(true);
+
+    await performSprintDeletion(sprintToDeleteDashboard, taskAssignments);
+
     setTasksToReassign([]);
     setSprintToDeleteDashboard(null);
   };
@@ -1562,7 +1577,9 @@ const Dashboard = () => {
             <h1>Dashboard</h1>
           </div>
           <div className="dashboard-loading">
-            <div className="spinner"></div>
+            <div className="loading-overlay">
+              <div className="spinner"></div>
+            </div>
             <p>Cargando proyecto...</p>
           </div>
         </div>
@@ -1991,6 +2008,17 @@ const Dashboard = () => {
 
       {/* Popup de éxito */}
       <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
+
+      {deletingSprint && (
+        <div className="spinner-overlay">
+          <div className="loading-overlay">
+            <div className="spinner"></div>
+            <p style={{ color: "#fff", fontSize: "18px", marginTop: "10px" }}>
+              Eliminando Sprint...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
