@@ -913,6 +913,15 @@ const Biometricos = () => {
             >
               {showMetrics ? 'Ocultar métricas detalladas' : 'Ver métricas detalladas'}
             </button>
+            {localStorage.getItem('role') === 'admin' && (
+              <button 
+                className="main-button" 
+                onClick={() => navigate('/team-dashboard')}
+                style={{ marginTop: '20px', backgroundColor: '#302041' }}
+              >
+                Ver Equipo
+              </button>
+            )}
           </>
         )}
         {tab==='week' && renderWeeklySummary()}
