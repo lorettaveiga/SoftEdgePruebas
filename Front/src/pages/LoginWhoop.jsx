@@ -26,7 +26,7 @@ const LoginWhoop = () => {
                 padding: '0 1.5rem',
             }}>
                 <img src="/Whoop-circle-logo-1.webp" alt="Whoop Logo" style={{ width: 90, height: 90, marginBottom: 32 }} />
-                <h2 className="form-title" style={{ textAlign: 'center', color: '#222', fontWeight: 700, marginBottom: 18, fontSize: '2rem' }}>Conectar con WHOOP</h2>
+                <h2 className="form-title" style={{ textAlign: 'center', color: '#222', fontWeight: 700, marginBottom: 18, fontSize: '3rem' }}>Conectar con WHOOP</h2>
                 <p style={{ color: '#555', marginBottom: '2.5rem', textAlign: 'center', fontSize: '1.15rem', maxWidth: 380 }}>
                     Inicia sesión con tu cuenta de WHOOP para ver tus datos biométricos y mejorar tu experiencia en StratEdge.
                 </p>
