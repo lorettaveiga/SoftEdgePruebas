@@ -9,6 +9,7 @@ import RenderRequirementsTab from "../components/RenderRequirementsTab";
 import TeamEditPopup from "../components/TeamEditPopup";
 import ModificationHistory from "../components/ModificationHistory";
 import SprintDetails from "../components/SprintDetails";
+import TaskReassignmentPopup from "../components/TaskReassignmentPopup";
 import "../css/Dashboard.css";
 import ProjectMetrics from "../components/ProjectMetrics";
 
@@ -175,6 +176,12 @@ const Dashboard = () => {
   const [taskToSelect, setTaskToSelect] = useState(null);
   const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
+  const [showDeleteSprintConfirmation, setShowDeleteSprintConfirmation] = useState(false);
+  const [showTaskReassignmentPopup, setShowTaskReassignmentPopup] = useState(false);
+  const [tasksToReassign, setTasksToReassign] = useState([]);
+  const [sprintToDeleteDashboard, setSprintToDeleteDashboard] = useState(null);
+
+  // Estado para manejar el número máximo de tareas
   const [nextTaskNumber, setNextTaskNumber] = useState(0);
   const [draggedTask, setDraggedTask] = useState(null);
 
@@ -933,39 +940,56 @@ const Dashboard = () => {
     <div>
       <div className="sprints-grid">
         {sprints.length > 0 ? (
-          sprints.map((sprint, index) => (
-            <div
-              key={index}
-              className="sprint-card"
-              onClick={() => handleSprintClick(sprint)}
-            >
-              <h3 className="sprint-title">SPRINT {sprint.number}</h3>
-              <div className="sprint-status-container">
-                <span
-                  className={`status-badge ${sprint.status
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}
-                >
-                  {sprint.status}
-                </span>
-              </div>
-              <div className="sprint-dates">
-                <div className="date-item">
-                  <span className="calendar-icon">📅</span>
-                  <span className="date-text">
-                    {formatDateWithoutTimezone(sprint.startDate)}
+          <>
+            {sprints.map((sprint, index) => (
+              <div
+                key={index}
+                className="sprint-card"
+                onClick={() => handleSprintClick(sprint)}
+              >
+                <h3 className="sprint-title">SPRINT {sprint.number}</h3>
+                <div className="sprint-status-container">
+                  <span
+                    className={`status-badge ${sprint.status
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
+                    {sprint.status}
                   </span>
                 </div>
-                <div className="date-separator">→</div>
-                <div className="date-item">
-                  <span className="calendar-icon">📅</span>
-                  <span className="date-text">
-                    {formatDateWithoutTimezone(sprint.endDate)}
-                  </span>
+                <div className="sprint-dates">
+                  <div className="date-item">
+                    <span className="calendar-icon">📅</span>
+                    <span className="date-text">
+                      {formatDateWithoutTimezone(sprint.startDate)}
+                    </span>
+                  </div>
+                  <div className="date-separator">→</div>
+                  <div className="date-item">
+                    <span className="calendar-icon">📅</span>
+                    <span className="date-text">
+                      {formatDateWithoutTimezone(sprint.endDate)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            {/* Add Sprint Card - Only for Admins */}
+            {role === "admin" && (
+              <div
+                className="sprint-card add-sprint-card"
+                onClick={handleAddSprint}
+              >
+                <div className="add-sprint-content">
+                  <div className="add-sprint-icon">+</div>
+                  <h3 className="add-sprint-title">Agregar Sprint</h3>
+                  <p className="add-sprint-description">
+                    Haz clic para añadir un nuevo sprint al proyecto
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="no-sprints">
             <p>No hay sprints disponibles</p>
@@ -994,6 +1018,17 @@ const Dashboard = () => {
                 <option value={4}>4 semanas</option>
               </select>
             </div>
+            <div className="config-option">
+              <label>Eliminar último Sprint:</label>
+              <button
+                className="delete-sprint-button"
+                onClick={() => setShowDeleteSprintConfirmation(true)}
+                disabled={(project.sprintNumber || 3) <= 1}
+                title={(project.sprintNumber || 3) <= 1 ? "No se puede eliminar el único sprint" : "Eliminar el último sprint"}
+              >
+                Eliminar Sprint
+              </button>
+            </div>
             <div className="config-info">
               <p>
                 <strong>Información:</strong> Cambiar la duración afectará las
@@ -1005,6 +1040,9 @@ const Dashboard = () => {
                   {formatDateWithoutTimezone(project.fechaCreacion)}
                 </p>
               )}
+              <p>
+                <strong>Sprints actuales:</strong> {project.sprintNumber || 3}
+              </p>
             </div>
           </div>
         </div>
@@ -1187,6 +1225,87 @@ const Dashboard = () => {
     }
   };
 
+  // Add function to handle adding new sprints
+  const handleAddSprint = async () => {
+    try {
+      const newSprintNumber = (project.sprintNumber || 3) + 1;
+
+      // Update project in database with new sprint count
+      const updateData = {
+        nombreProyecto: project.nombreProyecto,
+        descripcion: project.descripcion,
+        sprintNumber: newSprintNumber,
+        sprintDuration: project.sprintDuration || 2,
+        estatus: project.estatus,
+        fechaCreacion: project.fechaCreacion,
+        // Include all the existing arrays
+        EP: project.EP || [],
+        RF: project.RF || [],
+        RNF: project.RNF || [],
+        HU: project.HU || [],
+      };
+
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update project with new sprint count");
+      }
+
+      // Update local project state
+      const updatedProject = { ...project, sprintNumber: newSprintNumber };
+      setProject(updatedProject);
+
+      // Regenerate sprints with new count
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          allTasks,
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          [],
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Sprint agregado exitosamente.");
+    } catch (error) {
+      console.error("Error adding new sprint:", error);
+      setError("Error al agregar el nuevo sprint. Por favor, inténtalo de nuevo.");
+    }
+  };
+
   const handleDeleteProject = async (projectId) => {
     setProjectToDelete(projectId);
     setShowProjectDeleteConfirmation(true);
@@ -1216,6 +1335,256 @@ const Dashboard = () => {
       setProjectToDelete(null);
     }
   };
+
+  // Update the handleDeleteLastSprint function to handle task reassignment
+  const handleDeleteLastSprint = async () => {
+    try {
+      const currentSprintCount = project.sprintNumber || 3;
+      
+      // Prevent deleting if there's only one sprint
+      if (currentSprintCount <= 1) {
+        setError("No se puede eliminar el sprint. Debe haber al menos un sprint en el proyecto.");
+        return;
+      }
+
+      // Get tasks assigned to the last sprint
+      const tasksResponse = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      let allTasks = [];
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        allTasks = tasksData.tasks || [];
+      }
+
+      // Filter tasks that belong to the sprint being deleted
+      const tasksInLastSprint = allTasks.filter(task => 
+        parseInt(task.sprint, 10) === currentSprintCount
+      );
+
+      // Set data for task reassignment popup
+      setTasksToReassign(tasksInLastSprint);
+      setSprintToDeleteDashboard(currentSprintCount);
+      
+      // Generate available sprints (all except the one being deleted)
+      const availableSprints = sprints.filter(sprint => sprint.number !== currentSprintCount);
+      
+      if (tasksInLastSprint.length > 0 && availableSprints.length > 0) {
+        // Show task reassignment popup if there are tasks to reassign
+        setShowTaskReassignmentPopup(true);
+      } else {
+        // If no tasks or no available sprints, proceed with deletion
+        await performSprintDeletion(currentSprintCount, {});
+      }
+      
+      setShowDeleteSprintConfirmation(false);
+    } catch (error) {
+      console.error("Error preparing sprint deletion:", error);
+      setError("Error al preparar la eliminación del sprint.");
+      setShowDeleteSprintConfirmation(false);
+    }
+  };
+
+  // Function to perform the actual sprint deletion with task reassignments
+  const performSprintDeletion = async (sprintNumber, taskAssignments) => {
+    try {
+      const newSprintNumber = sprintNumber - 1;
+
+      if (Object.keys(taskAssignments).length > 0) {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          const allTasks = tasksData.tasks || [];
+
+          const updatedTasks = allTasks.map(task => {
+            if (taskAssignments[task.id]) {
+              return {
+                ...task,
+                sprint: taskAssignments[task.id], // Ensure sprint is passed as a number
+              };
+            }
+            return task;
+          }).filter(task => task.sprint !== sprintNumber);
+
+          const tasksByElement = {};
+          updatedTasks.forEach(task => {
+            const key = `${task.requirementType}_${task.elementId}`;
+            if (!tasksByElement[key]) {
+              tasksByElement[key] = {
+                requirementType: task.requirementType,
+                elementId: task.elementId,
+                tasks: [],
+              };
+            }
+            tasksByElement[key].tasks.push({
+              id: task.id,
+              titulo: task.titulo,
+              descripcion: task.descripcion,
+              prioridad: task.prioridad,
+              asignados: task.asignados,
+              sprint: task.sprint,
+              estado: task.estado || 'Pendiente',
+            });
+          });
+
+          for (const elementData of Object.values(tasksByElement)) {
+            await fetch(`${BACKEND_URL}/projectsFB/${projectId}/tasks`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({
+                requirementType: elementData.requirementType,
+                elementId: elementData.elementId,
+                tasks: elementData.tasks,
+              }),
+            });
+          }
+        }
+      }
+
+      // Update project with reduced sprint count
+      const updateData = {
+        nombreProyecto: project.nombreProyecto,
+        descripcion: project.descripcion,
+        sprintNumber: newSprintNumber,
+        sprintDuration: project.sprintDuration || 2,
+        estatus: project.estatus,
+        fechaCreacion: project.fechaCreacion,
+        EP: project.EP || [],
+        RF: project.RF || [],
+        RNF: project.RNF || [],
+        HU: project.HU || [],
+      };
+
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update project with new sprint count");
+      }
+
+      // Update local project state
+      const updatedProject = { ...project, sprintNumber: newSprintNumber };
+      setProject(updatedProject);
+
+      // Regenerate sprints with new count
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          allTasks,
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          [],
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Sprint eliminado exitosamente.");
+    } catch (error) {
+      console.error("Error deleting sprint:", error);
+      setError("Error al eliminar el sprint. Por favor, inténtalo de nuevo.");
+    }
+  };
+
+  // Handle task reassignment confirmation
+  const handleTaskReassignmentConfirm = async (taskAssignments) => {
+    await performSprintDeletion(sprintToDeleteDashboard, taskAssignments);
+    setShowTaskReassignmentPopup(false);
+    setTasksToReassign([]);
+    setSprintToDeleteDashboard(null);
+  };
+
+  // Handle task reassignment cancellation
+  const handleTaskReassignmentCancel = () => {
+    setShowTaskReassignmentPopup(false);
+    setTasksToReassign([]);
+    setSprintToDeleteDashboard(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dashboard-loading">
+            <div className="spinner"></div>
+            <p>Cargando proyecto...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dashboard-error">
+            <h2>Proyecto no encontrado</h2>
+            <button onClick={() => navigate("/home")}>Volver al inicio</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderOverviewTab = () => (
     <div className="overview-section">
@@ -1568,6 +1937,56 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Task Reassignment Popup */}
+      {showTaskReassignmentPopup && (
+        <TaskReassignmentPopup
+          sprintToDelete={sprintToDeleteDashboard}
+          tasksToReassign={tasksToReassign}
+          availableSprints={sprints.filter(sprint => sprint.number !== sprintToDeleteDashboard)}
+          onConfirm={handleTaskReassignmentConfirm}
+          onCancel={handleTaskReassignmentCancel}
+        />
+      )}
+
+      {/* Delete Sprint Confirmation Dialog */}
+      {showDeleteSprintConfirmation && (
+        <div
+          className="popup-overlay"
+          onClick={() => setShowDeleteSprintConfirmation(false)}
+        >
+          <div
+            className="popup-content confirmation-popup"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "400px", textAlign: "center" }}
+          >
+            <h3>Confirmar eliminación de Sprint</h3>
+            <p>
+              ¿Estás seguro que deseas eliminar el último sprint (Sprint {project.sprintNumber || 3})?
+            </p>
+            <div className="confirmation-actions">
+              <button
+                className="cancel-button"
+                onClick={() => setShowDeleteSprintConfirmation(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="delete-button"
+                onClick={handleDeleteLastSprint}
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup de error */}
+      <ErrorPopup message={error} onClose={closeErrorPopup} />
+
+      {/* Popup de éxito */}
+      <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
     </div>
   );
 };
