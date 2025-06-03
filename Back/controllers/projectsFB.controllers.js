@@ -694,5 +694,30 @@ export const addProjectHistory = async (req, res) => {
   } catch (error) {
     console.error("Error al agregar historial del proyecto:", error);
     res.status(500).json({ success: false, message: "Error al agregar historial del proyecto." });
+
+export const updateSprintNumber = async (req, res) => {
+  const { id } = req.params; // ID del proyecto
+  const { sprintNumber } = req.body; // Nuevo número de sprint
+
+  try {
+    const projectRef = db.collection("proyectos").doc(id);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+      return res.status(404).json({ message: "Proyecto no encontrado" });
+    }
+
+    // Actualiza el número de sprint en el proyecto
+    await projectRef.update({ sprintNumber });
+
+    res
+      .status(200)
+      .json({ message: "Número de sprint actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar el número de sprint:", error);
+    res
+      .status(500)
+      .json({ message: "Error al actualizar el número de sprint" });
+
   }
 };
