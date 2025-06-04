@@ -16,6 +16,46 @@ const metricDescriptions = {
   'Calorías': 'Las calorías quemadas reflejan el gasto energético total durante el día.'
 };
 
+// --- RECOMMENDATION HELPERS ---
+const getRecoveryRecommendation = (pct) => {
+  if (pct <= 10) return { estado: "recuperación mínima", rec: "Pide salir temprano, evita reuniones largas, considera día de descanso o remoto." };
+  if (pct <= 20) return { estado: "muy baja recuperación", rec: "Mantente en modo recuperación, haz pausas frecuentes, duerme más esa noche." };
+  if (pct <= 30) return { estado: "baja", rec: "Prioriza lo esencial, evita ejercicio fuerte, apóyate en tu equipo." };
+  if (pct <= 40) return { estado: "moderada-baja", rec: "Realiza solo tareas suaves, evita multitasking, aléjate de pantallas al final del día." };
+  if (pct <= 50) return { estado: "moderada", rec: "Avanza con calma, mantén hidratación y buena alimentación, duerme temprano." };
+  if (pct <= 60) return { estado: "aceptable", rec: "Día tranquilo, puedes ejercitarte ligeramente, pero no sobrecargues." };
+  if (pct <= 70) return { estado: "buena", rec: "Buen momento para tareas importantes, mantén buena postura y descanso visual." };
+  if (pct <= 80) return { estado: "muy buena", rec: "Ideal para enfocarte, aprovecha tu energía con enfoque." };
+  if (pct <= 90) return { estado: "excelente", rec: "Empuja proyectos, haz ejercicio exigente, aprovecha esta ventana productiva." };
+  return { estado: "óptima", rec: "Estado ideal para decisiones clave, retos físicos o creativos." };
+};
+
+const getSleepRecommendation = (pct) => {
+  if (pct <= 10) return { estado: "muy deficiente", rec: "Urgente dormir más. Cancelar citas innecesarias y evitar pantallas." };
+  if (pct <= 20) return { estado: "deficiente", rec: "Haz siestas si puedes, mantente alejado de la cafeína, baja la intensidad del día." };
+  if (pct <= 30) return { estado: "poco reparador", rec: "Evita reuniones demandantes, agenda tiempo para dormir temprano." };
+  if (pct <= 40) return { estado: "fragmentado", rec: "Día lento, no tomes decisiones importantes, sigue una rutina calmada." };
+  if (pct <= 50) return { estado: "ligero", rec: "Energía intermitente, prioriza descansos entre tareas y tiempo al aire libre." };
+  if (pct <= 60) return { estado: "aceptable", rec: "Puedes trabajar bien, pero planea dormir mejor esta noche." };
+  if (pct <= 70) return { estado: "bueno", rec: "Estás estable, intenta mantener la misma hora de sueño y despertar." };
+  if (pct <= 80) return { estado: "muy bueno", rec: "Puedes rendir bien, cuida tu consistencia para seguir así." };
+  if (pct <= 90) return { estado: "excelente", rec: "Alto rendimiento cognitivo y físico, ideal para productividad." };
+  return { estado: "óptimo", rec: "Sueño perfecto, tu cuerpo y mente están al 100%." };
+};
+
+const getStrainRecommendation = (strain) => {
+  if (strain <= 1) return { estado: "mínimo esfuerzo", rec: "Actívate con caminata ligera o yoga, puede ser día muy pasivo." };
+  if (strain <= 2) return { estado: "bajo", rec: "Puedes subir el ritmo, incorpora ejercicio suave." };
+  if (strain <= 3) return { estado: "bajo-moderado", rec: "Ideal para recuperación activa, tareas de baja demanda." };
+  if (strain <= 4) return { estado: "moderado", rec: "Buen balance, no te excedas si recuperación es baja." };
+  if (strain <= 5) return { estado: "medio", rec: "Nivel sano, mantén pausas y buena alimentación." };
+  if (strain <= 6) return { estado: "medio-alto", rec: "Día productivo, ideal con recuperación buena." };
+  if (strain <= 7) return { estado: "alto", rec: "Bien si estás bien recuperado, incluye estiramientos." };
+  if (strain <= 8) return { estado: "muy alto", rec: "Revisa tu nivel de recuperación, podrías necesitar descanso después." };
+  if (strain <= 9) return { estado: "exigente", rec: "Alta carga, escucha a tu cuerpo y duerme bien hoy." };
+  return { estado: "máximo esfuerzo", rec: "Prioriza descanso mañana, hidrátate, y evita sobreentrenamiento." };
+};
+
 // --- COMPONENTES AUXILIARES ---
 const MetricCard = ({label, value, unit, icon, color, expanded, onExpand, description}) => (
   <div className={`biometricos-metric-card${expanded ? ' expanded' : ''}`} onClick={onExpand} style={{cursor: 'pointer'}}>
@@ -285,13 +325,15 @@ const Biometricos = () => {
         <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()} style={{
           maxWidth: '90%',
           width: '800px',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 60px)',
           overflowY: 'auto',
           padding: '40px',
-          margin: '20px auto',
+          margin: '30px auto',
           background: '#fff',
           borderRadius: '20px',
-          boxShadow: '0 4px 24px rgba(158, 114, 190, 0.15)'
+          boxShadow: '0 4px 24px rgba(158, 114, 190, 0.15)',
+          position: 'relative',
+          top: '0'
         }}>
           <button className="biometricos-popup-close" onClick={onClose}>&times;</button>
           <h2 className="biometricos-popup-title" style={{fontSize: 32, marginBottom: 24, color: '#7a5a96'}}>{title}</h2>
@@ -975,6 +1017,8 @@ const Biometricos = () => {
 
 const RecoveryDetailPopup = ({onClose, data}) => {
   const score = data?.score || {};
+  const pct = score.recovery_score !== undefined ? Math.round(score.recovery_score) : 0;
+  const recObj = getRecoveryRecommendation(pct);
   const metrics = [
     { label: 'Variabilidad de la Frecuencia Cardíaca', value: score.hrv_rmssd_milli, unit: 'ms', format: v => Math.round(v) },
     { label: 'Frecuencia Cardíaca en Reposo', value: score.resting_heart_rate, unit: 'lpm', format: v => Math.round(v) },
@@ -985,11 +1029,23 @@ const RecoveryDetailPopup = ({onClose, data}) => {
   ];
   return (
     <div className="biometricos-popup-overlay" onClick={onClose}>
-      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()}>
+      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()} style={{
+        maxWidth: '600px',
+        width: '95%',
+        maxHeight: 'calc(100vh - 60px)',
+        overflowY: 'auto',
+        padding: '40px',
+        margin: '30px auto',
+        background: '#fff',
+        borderRadius: '20px',
+        boxShadow: '0 4px 24px rgba(158, 114, 190, 0.15)',
+        position: 'relative',
+        top: '0'
+      }}>
         <button className="biometricos-popup-close" onClick={onClose}>&times;</button>
         <h2 className="biometricos-popup-title">RECUPERACIÓN</h2>
         <div className="biometricos-popup-value" style={{color: '#a892c5'}}>
-          {score.recovery_score !== undefined ? Math.round(score.recovery_score) : '--'}%
+          {pct}%
         </div>
         <div className="biometricos-popup-metrics">
           {metrics.filter(m => m.value !== undefined).map(m => (
@@ -1002,6 +1058,10 @@ const RecoveryDetailPopup = ({onClose, data}) => {
             {score.recovery_score >= 67 ? 'Tu cuerpo está bien recuperado, ¡aprovecha para entrenar fuerte!' : score.recovery_score >= 34 ? 'Recuperación moderada, escucha a tu cuerpo y ajusta la intensidad.' : 'Recuperación baja, prioriza descanso y recuperación.'}
           </div>
         </div>
+        <div className="biometricos-popup-interpret" style={{marginTop: 18}}>
+          <span>Recomendación</span>
+          <div>{`Tu recuperación fue ${recObj.estado}. ${recObj.rec}`}</div>
+        </div>
       </div>
     </div>
   );
@@ -1009,30 +1069,33 @@ const RecoveryDetailPopup = ({onClose, data}) => {
 
 const SleepDetailPopup = ({onClose, data}) => {
   const score = data?.score || {};
-  console.log('Sleep Data Score:', score);
-  console.log('Sleep Consistency:', score.sleep_consistency_percentage);
+  const pct = score.sleep_performance_percentage !== undefined ? score.sleep_performance_percentage : 0;
+  const recObj = getSleepRecommendation(pct);
   const metrics = [
     { label: 'Horas vs Necesarias', value: score.sleep_needed?.sleep_needed_vs_actual_percentage, unit: '%', format: v => v },
     { label: 'Consistencia del Sueño', value: score.sleep_consistency_percentage, unit: '%', format: v => v },
     { label: 'Eficiencia del Sueño', value: score.sleep_efficiency_percentage, unit: '%', format: v => Number(v).toFixed(2) },
     { label: 'Estrés de Sueño Alto', value: score.high_sleep_stress_percentage, unit: '%', format: v => v },
   ];
-  console.log('Filtered Metrics:', metrics.filter(m => m.value !== undefined));
-  let interpretacion = 'No hay suficientes datos.';
-  if (score.sleep_performance_percentage >= 85) {
-    interpretacion = '¡Excelente sueño! Tu cuerpo está bien recuperado.';
-  } else if (score.sleep_performance_percentage >= 70) {
-    interpretacion = 'Buen sueño, pero puedes mejorar la consistencia y eficiencia para optimizar tu recuperación.';
-  } else if (score.sleep_performance_percentage > 0) {
-    interpretacion = 'Tu sueño fue moderado. Intenta mejorar la consistencia y eficiencia para optimizar tu recuperación.';
-  }
   return (
     <div className="biometricos-popup-overlay" onClick={onClose}>
-      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()}>
+      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()} style={{
+        maxWidth: '600px',
+        width: '95%',
+        maxHeight: 'calc(100vh - 60px)',
+        overflowY: 'auto',
+        padding: '40px',
+        margin: '30px auto',
+        background: '#fff',
+        borderRadius: '20px',
+        boxShadow: '0 4px 24px rgba(158, 114, 190, 0.15)',
+        position: 'relative',
+        top: '0'
+      }}>
         <button className="biometricos-popup-close" onClick={onClose}>&times;</button>
         <h2 className="biometricos-popup-title">DESEMPEÑO DEL SUEÑO</h2>
         <div className="biometricos-popup-value" style={{color: '#7a5a96'}}>
-          {score.sleep_performance_percentage !== undefined ? score.sleep_performance_percentage : '--'}%
+          {pct !== undefined ? pct : '--'}%
         </div>
         <div className="biometricos-popup-metrics">
           {metrics.filter(m => m.value !== undefined).map(m => (
@@ -1041,7 +1104,13 @@ const SleepDetailPopup = ({onClose, data}) => {
         </div>
         <div className="biometricos-popup-interpret">
           <span>Interpretación</span>
-          <div>{interpretacion}</div>
+          <div>
+            {score.sleep_performance_percentage >= 85 ? '¡Excelente sueño! Tu cuerpo está bien recuperado.' : score.sleep_performance_percentage >= 70 ? 'Buen sueño, pero puedes mejorar la consistencia y eficiencia para optimizar tu recuperación.' : 'Tu sueño fue moderado. Intenta mejorar la consistencia y eficiencia para optimizar tu recuperación.'}
+          </div>
+        </div>
+        <div className="biometricos-popup-interpret" style={{marginTop: 18}}>
+          <span>Recomendación</span>
+          <div>{`Tu sueño fue ${recObj.estado}. ${recObj.rec}`}</div>
         </div>
       </div>
     </div>
@@ -1050,6 +1119,8 @@ const SleepDetailPopup = ({onClose, data}) => {
 
 const StrainDetailPopup = ({onClose, data, yesterdayWorkouts = [], sportMap = {}}) => {
   const score = data?.score || {};
+  const strain = score.strain ? Number(score.strain).toFixed(2) : 0;
+  const recObj = getStrainRecommendation(Number(strain));
   const metrics = [
     { label: 'Calorías', value: score.calories ? Math.round(score.calories) : (score.kilojoule ? Math.round(score.kilojoule * 0.239006) : undefined), unit: 'kcal' },
     { label: 'Minutos en Zonas FC 1-3', value: score.zone_duration_1_3_milli ? (score.zone_duration_1_3_milli / (1000*60)).toFixed(0) : undefined, unit: 'min' },
@@ -1058,7 +1129,19 @@ const StrainDetailPopup = ({onClose, data, yesterdayWorkouts = [], sportMap = {}
   ];
   return (
     <div className="biometricos-popup-overlay" onClick={onClose}>
-      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()}>
+      <div className="biometricos-popup-content" onClick={e=>e.stopPropagation()} style={{
+        maxWidth: '600px',
+        width: '95%',
+        maxHeight: 'calc(100vh - 60px)',
+        overflowY: 'auto',
+        padding: '40px',
+        margin: '30px auto',
+        background: '#fff',
+        borderRadius: '20px',
+        boxShadow: '0 4px 24px rgba(158, 114, 190, 0.15)',
+        position: 'relative',
+        top: '0'
+      }}>
         <button className="biometricos-popup-close" onClick={onClose}>&times;</button>
         <h2 className="biometricos-popup-title">ESFUERZO</h2>
         <div className="biometricos-popup-value" style={{color: '#a892c5'}}>
@@ -1101,6 +1184,10 @@ const StrainDetailPopup = ({onClose, data, yesterdayWorkouts = [], sportMap = {}
           <div>
             {score.strain >= 10 ? 'Alta carga cardiovascular, tu cuerpo ha trabajado duro.' : score.strain >= 6 ? 'Carga moderada, buen trabajo.' : 'Carga baja, considera aumentar la actividad física si tu recuperación lo permite.'}
           </div>
+        </div>
+        <div className="biometricos-popup-interpret" style={{marginTop: 18}}>
+          <span>Recomendación</span>
+          <div>{`Tu esfuerzo fue ${recObj.estado}. ${recObj.rec}`}</div>
         </div>
       </div>
     </div>
