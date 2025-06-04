@@ -143,12 +143,19 @@ function Generate() {
 
     let progressInterval = null;
     let quoteInterval = null;
+    let finalizingInterval = null;
     let isFinished = false;
 
     try {
       // Start cycling through quotes every 1.5s
       quoteInterval = setInterval(() => {
-        setCurrentQuote(prev => (prev + 1) % (loadingPhrases.length - 1));
+        setCurrentQuote(prev => {
+          // If about to reach the last phrase, stop cycling
+          if (prev + 1 === loadingPhrases.length - 1) {
+            clearInterval(quoteInterval);
+          }
+          return (prev + 1) % loadingPhrases.length;
+        });
       }, 1500);
 
       // Animate progress bar from 0 to 90% over estimated time
@@ -156,6 +163,29 @@ function Generate() {
       const startTime = Date.now();
       progressInterval = setInterval(() => {
         if (isFinished) return;
+        // If we're on the last phrase, stop this interval
+        if (currentQuote === loadingPhrases.length - 1) {
+          clearInterval(progressInterval);
+          // Start slow finalizing progress
+          finalizingInterval = setInterval(() => {
+            setProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(finalizingInterval);
+                setProgress(100);
+                // Wait 2 seconds at 100% before navigating
+                setTimeout(() => {
+                  setLoading(false);
+                  setProgress(0);
+                  setCurrentQuote(0);
+                  navigate("/revisionIA", { state: { generatedText: cleanJSON, showSuccess: true } });
+                }, 2000);
+                return 100;
+              }
+              return prev + 1; // 1% every 20ms for 2s
+            });
+          }, 20);
+          return;
+        }
         const elapsed = Date.now() - startTime;
         let percent = Math.min((elapsed / estimatedTotalTime) * 90, 90);
         setProgress(percent);
@@ -180,7 +210,26 @@ function Generate() {
       isFinished = true;
       clearInterval(progressInterval);
       clearInterval(quoteInterval);
-      setCurrentQuote(loadingPhrases.length - 1); // Show last phrase
+      // If not already on the last phrase, set it and start finalizing progress
+      if (currentQuote !== loadingPhrases.length - 1) {
+        setCurrentQuote(loadingPhrases.length - 1);
+        finalizingInterval = setInterval(() => {
+          setProgress(prev => {
+            if (prev >= 100) {
+              clearInterval(finalizingInterval);
+              setProgress(100);
+              setTimeout(() => {
+                setLoading(false);
+                setProgress(0);
+                setCurrentQuote(0);
+                navigate("/revisionIA", { state: { generatedText: cleanJSON, showSuccess: true } });
+              }, 2000);
+              return 100;
+            }
+            return prev + 1;
+          });
+        }, 20);
+      }
 
       // Prepare cleanJSON before animation
       const cleanJSON = data
@@ -190,30 +239,6 @@ function Generate() {
 
       JSON.parse(cleanJSON); // Validar que sea JSON válido
       addToHistory(prompt);
-      setSuccessMessage("Proyecto generado exitosamente");
-
-      // Animate progress to 100% smoothly over 1 second
-      const startProgress = progress;
-      const animationDuration = 1000; // 1 second
-      const animationSteps = 20;
-      let step = 0;
-      const animateTo100 = setInterval(() => {
-        step++;
-        const newProgress = startProgress + ((100 - startProgress) * (step / animationSteps));
-        setProgress(newProgress);
-        if (step >= animationSteps) {
-          clearInterval(animateTo100);
-          setProgress(100);
-          // Wait 2 seconds at 100% before navigating
-          setTimeout(() => {
-            setLoading(false);
-            setProgress(0);
-            setCurrentQuote(0);
-            navigate("/revisionIA", { state: { generatedText: cleanJSON } });
-            setSuccessMessage("Proyecto generado exitosamente");
-          }, 2000);
-        }
-      }, animationDuration / animationSteps);
     } catch (error) {
       clearInterval(progressInterval);
       clearInterval(quoteInterval);

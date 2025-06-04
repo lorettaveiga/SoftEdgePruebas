@@ -239,6 +239,16 @@ function RevisionIA() {
     };
   }, [location.state]);
 
+  useEffect(() => {
+    if (location.state?.showSuccess) {
+      setTimeout(() => {
+        setSuccessMessage("Proyecto generado exitosamente");
+      }, 200); // Small delay to ensure popup appears after mount
+      // Remove the flag so it doesn't show again on refresh
+      navigate(location.pathname, { replace: true, state: { ...location.state, showSuccess: undefined } });
+    }
+  }, [location.state, navigate, location.pathname]);
+
   const toggleExpand = (tabId) => {
     setExpandedTab(expandedTab === tabId ? null : tabId);
   };
