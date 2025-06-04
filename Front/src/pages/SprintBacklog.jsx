@@ -6,7 +6,7 @@ import SuccessPopup from "../components/SuccessPopup";
 import TopAppBar from "../components/TopAppBar";
 import SprintDetails from "../components/SprintDetails";
 import "../css/SprintBacklog.css";
-import '../css/Spinner.css';
+import "../css/Spinner.css";
 
 const SprintBacklog = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -30,7 +30,7 @@ const SprintBacklog = () => {
     projectCreatedAt = null
   ) => {
     const sprints = [];
-    const durationDays = duration * 7; // Convert weeks to days
+    const durationDays = duration * 7; // Convierte semanas a días
 
     for (let i = 1; i <= sprintNumber; i++) {
       const startDate = new Date(projectCreatedAt || new Date());
@@ -135,7 +135,7 @@ const SprintBacklog = () => {
     if (projectId) {
       fetchData();
     }
-  }, [projectId, allTasks]); 
+  }, [projectId, allTasks]);
 
   const handleSprintClick = (sprint) => {
     console.log("Sprint seleccionado:", sprint);
@@ -145,6 +145,8 @@ const SprintBacklog = () => {
   const handleCloseSprintDetails = () => {
     setSelectedSprint(null);
   };
+
+  
 
   if (loading) {
     return (
@@ -290,13 +292,16 @@ const SprintBacklog = () => {
       </div>
 
       {selectedSprint && (
-        <SprintDetails
-          sprint={selectedSprint}
-          sprintTasks={selectedSprint?.tasks || []}
-          onClose={handleCloseSprintDetails}
-          setAllTasks={setSprints}
-          projectId={projectId}
-        />
+        <>
+          {console.log("Backlog sprint details")}
+          <SprintDetails
+            sprint={selectedSprint}
+            sprintTasks={selectedSprint?.tasks || []}
+            onClose={handleCloseSprintDetails}
+            setAllTasks={setSprints}
+            projectId={projectId}
+          />
+        </>
       )}
 
       <ErrorPopup message={error} onClose={() => setError(null)} />
