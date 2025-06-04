@@ -107,9 +107,51 @@ const Home = () => {
       );
     } else if (sortType === "Por Defecto") {
       return filteredProjects; // Sin orden específico
+    } else if (sortType === "Color") {
+      // Ordenar por colores definidos en ProjectCard
+      const colorOrder = ["#4b0082", "#7a5a96", "#d8bfd8"]; // Orden de colores
+      return [...filteredProjects].sort((a, b) => {
+        const colorA = colorOrder.includes(a.color) ? a.color : "#7a5a96"; // Validar color
+        const colorB = colorOrder.includes(b.color) ? b.color : "#7a5a96"; // Validar color
+        return colorOrder.indexOf(colorA) - colorOrder.indexOf(colorB);
+      });
     }
     return filteredProjects;
   }, [filteredProjects, sortType]);
+
+  const handleColorChange = async (projectId, newColor) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${projectId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ color: newColor }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update project color");
+
+      setProjects((prevProjects) => {
+        const updatedProjects = prevProjects.map((project) =>
+          project.id === projectId ? { ...project, color: newColor } : project
+        );
+
+        // Re-sort projects immediately after color change
+        const colorOrder = ["#4b0082", "#7a5a96", "#d8bfd8"];
+        return updatedProjects.sort((a, b) => {
+          const colorA = colorOrder.includes(a.color) ? a.color : "#7a5a96";
+          const colorB = colorOrder.includes(b.color) ? b.color : "#7a5a96";
+          return colorOrder.indexOf(colorA) - colorOrder.indexOf(colorB);
+        });
+      });
+
+      setSuccessMessage("Color del proyecto actualizado exitosamente.");
+    } catch (error) {
+      console.error("Error updating project color:", error);
+      setError("Error al actualizar el color del proyecto. Por favor, inténtalo de nuevo.");
+    }
+  };
 
   return (
     <div className="home-container">
@@ -152,6 +194,7 @@ const Home = () => {
           >
             <option>Por Defecto</option>
             <option>Nombre</option>
+            <option>Color</option> {/* Nueva opción para ordenar por color */}
           </select>
         </div>
 
@@ -182,9 +225,9 @@ const Home = () => {
           </div>
         ) : (
           sortedProjects.slice(0, displayCount).map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))
-        )}
+            <ProjectCard key={project.id} project={project} BACKEND_URL={BACKEND_URL} />
+          ))) 
+        }
       </div>
 
       {isLoading && (

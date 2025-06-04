@@ -250,8 +250,20 @@ function RevisionIA() {
   }, [location.state, navigate, location.pathname]);
 
   const toggleExpand = (tabId) => {
-    setExpandedTab(expandedTab === tabId ? null : tabId);
+    if (expandedTab === tabId) {
+      setExpandedTab(null); // Contraer si ya está expandido
+    } else {
+      setExpandedTab(tabId); // Expandir la pestaña seleccionada
+    }
   };
+
+  const handleTabClick = (tabId) => {
+    if (activeTab !== tabId) {
+      setActiveTab(tabId); // Cambiar la pestaña activa
+    }
+    toggleExpand(tabId); // Expandir o contraer la pestaña
+  };
+
 
   const handleDeleteItem = (tabId, id) => {
     setDeleteAction({ tabId, id });
@@ -658,10 +670,7 @@ function RevisionIA() {
               className={`tab ${activeTab === tab.id ? "active" : ""} ${
                 expandedTab === tab.id ? "expanded" : ""
               }`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                toggleExpand(tab.id);
-              }}
+              onClick={() => handleTabClick(tab.id)} // Usar la nueva función
             >
               <span className="tab-title">{tab.title}</span>
               {expandedTab === tab.id && (
