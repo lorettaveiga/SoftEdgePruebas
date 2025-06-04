@@ -4,6 +4,7 @@ import { AuthContext } from "../components/AuthContext";
 import { UserContext } from "../components/UserContext";
 import ErrorPopup from "../components/ErrorPopup"; // Importamos el componente de popup de error
 import SuccessPopup from "../components/SuccessPopup"; // Importamos el componente de popup de éxito
+import '../css/Spinner.css';
 
 import "../css/Login.css";
 
@@ -121,9 +122,9 @@ const Login = () => {
         </form>
       </div>
       {isLoading && (
-        <div className="loading-overlay">
+        <div className="loading-popup">
           <div className="spinner"></div>
-          <p>Iniciando sesión...</p>
+          <p className="loading-text">Iniciando sesión...</p>
         </div>
       )}
       {/* Popup de error */}

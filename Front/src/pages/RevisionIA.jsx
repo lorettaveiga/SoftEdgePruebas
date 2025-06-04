@@ -7,6 +7,7 @@ import TopAppBar from "../components/TopAppBar";
 import ErrorPopup from "../components/ErrorPopup"; // Importamos el popup de error
 import SuccessPopup from "../components/SuccessPopup"; // Importamos el popup de éxito
 import ConfirmationPopup from "../components/ConfirmationPopup";
+import '../css/Spinner.css';
 
 function RevisionIA() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -237,6 +238,16 @@ function RevisionIA() {
       window.removeEventListener("popstate", handlePopState);
     };
   }, [location.state]);
+
+  useEffect(() => {
+    if (location.state?.showSuccess) {
+      setTimeout(() => {
+        setSuccessMessage("Proyecto generado exitosamente");
+      }, 200); // Small delay to ensure popup appears after mount
+      // Remove the flag so it doesn't show again on refresh
+      navigate(location.pathname, { replace: true, state: { ...location.state, showSuccess: undefined } });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const toggleExpand = (tabId) => {
     setExpandedTab(expandedTab === tabId ? null : tabId);
@@ -529,9 +540,9 @@ function RevisionIA() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="loading-spinner">
-          <div></div>
-          <p>Cargando proyecto...</p>
+        <div className="loading-popup">
+          <div className="spinner"></div>
+          <p className="loading-text">Cargando proyecto...</p>
         </div>
       </div>
     );

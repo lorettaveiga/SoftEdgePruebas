@@ -12,6 +12,7 @@ import SprintDetails from "../components/SprintDetails";
 import TaskReassignmentPopup from "../components/TaskReassignmentPopup";
 import "../css/Dashboard.css";
 import ProjectMetrics from "../components/ProjectMetrics";
+import '../css/Spinner.css';
 
 const Dashboard = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -1616,11 +1617,9 @@ const Dashboard = () => {
           <div className="main-title">
             <h1>Dashboard</h1>
           </div>
-          <div className="dashboard-loading">
-            <div className="loading-overlay">
-              <div className="spinner"></div>
-            </div>
-            <p>Cargando proyecto...</p>
+          <div className="loading-popup">
+            <div className="spinner"></div>
+            <p className="loading-text">Cargando proyecto...</p>
           </div>
         </div>
       </div>
@@ -1748,9 +1747,9 @@ const Dashboard = () => {
           <div className="main-title">
             <h1>Dashboard</h1>
           </div>
-          <div className="dashboard-loading">
+          <div className="loading-popup">
             <div className="spinner"></div>
-            <p>Cargando proyecto...</p>
+            <p className="loading-text">Cargando proyecto...</p>
           </div>
         </div>
       </div>

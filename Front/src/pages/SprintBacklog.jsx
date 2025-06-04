@@ -6,6 +6,7 @@ import SuccessPopup from "../components/SuccessPopup";
 import TopAppBar from "../components/TopAppBar";
 import SprintDetails from "../components/SprintDetails";
 import "../css/SprintBacklog.css";
+import '../css/Spinner.css';
 
 const SprintBacklog = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -153,9 +154,9 @@ const SprintBacklog = () => {
           <div className="main-title">
             <h1>Sprint Backlog</h1>
           </div>
-          <div className="dashboard-loading">
+          <div className="loading-popup">
             <div className="spinner"></div>
-            <p>Cargando proyecto...</p>
+            <p className="loading-text">Cargando proyecto...</p>
           </div>
         </div>
       </div>

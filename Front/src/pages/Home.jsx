@@ -6,6 +6,7 @@ import TopAppBar from "../components/TopAppBar";
 import ErrorPopup from "../components/ErrorPopup"; // Importamos el popup de error
 import SuccessPopup from "../components/SuccessPopup"; // Importamos el popup de éxito
 import ProjectCard from "../components/ProjectCard"; // Importa el componente ProjectCard
+import '../css/Spinner.css';
 
 import "../css/Home.css";
 
@@ -187,9 +188,9 @@ const Home = () => {
       </div>
 
       {isLoading && (
-        <div className="loading-overlay">
+        <div className="loading-popup">
           <div className="spinner"></div>
-          <p>Cargando proyectos...</p>
+          <p className="loading-text">Cargando proyectos...</p>
         </div>
       )}
 
