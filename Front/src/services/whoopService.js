@@ -34,7 +34,6 @@ class WhoopService {
             this.refreshToken = localStorage.getItem('whoop_refresh_token');
             this.tokenExpiry = localStorage.getItem('whoop_token_expiry');
             
-            // Log token state on initialization
             console.log('Token state on initialization:', {
                 hasAccessToken: !!this.accessToken,
                 hasRefreshToken: !!this.refreshToken,
@@ -42,7 +41,7 @@ class WhoopService {
             });
         } catch (error) {
             console.error('Error initializing WhoopService:', error);
-            this.logout(); // Clear any potentially corrupted state
+            this.logout();    
         }
     }
 
@@ -175,7 +174,6 @@ class WhoopService {
             throw new Error('No autenticado');
         }
 
-        // Check if token is expired or about to expire (within 5 minutes)
         if (this.tokenExpiry && Date.now() + 300000 > this.tokenExpiry) {
             try {
                 await this.refreshAccessToken();
@@ -205,10 +203,8 @@ class WhoopService {
             return response.data;
         } catch (error) {
             if (error.response?.status === 401) {
-                // Try to refresh the token once
                 try {
                     await this.refreshAccessToken();
-                    // Retry the request with new token
                     const response = await axios({
                         method,
                         url: `${WHOOP_CONFIG.backendUrl}/whoop/${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,

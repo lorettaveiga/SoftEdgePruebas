@@ -7,7 +7,6 @@ export const proxyWhoopRequest = async (req, res) => {
         const { start, end } = req.query;
         const endpoint = req.path.split('/whoop/')[1];
         
-        // Get the access token from the Authorization header
         const authHeader = req.headers.authorization;
         if (!authHeader) {
             return res.status(401).json({ error: 'No authorization token provided' });
@@ -15,7 +14,6 @@ export const proxyWhoopRequest = async (req, res) => {
 
         const accessToken = authHeader.split(' ')[1];
         
-        // Map endpoints to their correct WHOOP API paths
         const endpointMap = {
             'sleep': 'activity/sleep',
             'workout': 'activity/workout',
@@ -29,7 +27,6 @@ export const proxyWhoopRequest = async (req, res) => {
             return res.status(404).json({ error: 'Invalid endpoint' });
         }
         
-        // Make the request to WHOOP API
         const response = await axios({
             method: 'GET',
             url: `https://api.prod.whoop.com/developer/v1/${whoopEndpoint}`,
