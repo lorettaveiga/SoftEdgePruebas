@@ -16,7 +16,7 @@ const metricDescriptions = {
   'Calorías': 'Las calorías quemadas reflejan el gasto energético total durante el día.'
 };
 
-// --- RECOMMENDATION HELPERS ---
+// estandares de recomendaciones
 const getRecoveryRecommendation = (pct) => {
   if (pct <= 10) return { estado: "recuperación mínima", rec: "Pide salir temprano, evita reuniones largas, considera día de descanso o remoto." };
   if (pct <= 20) return { estado: "muy baja recuperación", rec: "Mantente en modo recuperación, haz pausas frecuentes, duerme más esa noche." };
@@ -56,7 +56,7 @@ const getStrainRecommendation = (strain) => {
   return { estado: "máximo esfuerzo", rec: "Prioriza descanso mañana, hidrátate, y evita sobreentrenamiento." };
 };
 
-// --- COMPONENTES AUXILIARES ---
+// cartas principales
 const MetricCard = ({label, value, unit, icon, color, expanded, onExpand, description}) => (
   <div className={`biometricos-metric-card${expanded ? ' expanded' : ''}`} onClick={onExpand} style={{cursor: 'pointer'}}>
     <span className="material-icons">{icon}</span>
@@ -88,12 +88,12 @@ const WeeklyBarChart = ({title, data, color, weekDays, unit}) => (
   </div>
 );
 
+// main cards 
 const MainCard = ({label, value, color, onClick}) => {
   let english;
   if (label === 'RECUPERACIÓN') english = 'Recovery';
   else if (label === 'DESEMPEÑO DEL SUEÑO') english = 'Sleep Performance';
   else if (label === 'ESFUERZO') english = 'Strain';
-  // Ajuste: el círculo de esfuerzo es proporcional a 21
   const maxStrain = 21;
   const circleLength = 339; // 2 * PI * r, r=54
   const strainValue = label === 'ESFUERZO' ? Math.min(value, maxStrain) : value;
@@ -125,7 +125,11 @@ const MainCard = ({label, value, color, onClick}) => {
   );
 };
 
+// otras cartas y sus pop ups
 const Biometricos = () => {
+
+
+  // BACKENDWHOOP: ALMACENAMIENTO datos WHOOP
   const [sleepData, setSleepData] = useState([]);
   const [cycleData, setCycleData] = useState([]);
   const [recoveryData, setRecoveryData] = useState([]);
@@ -142,7 +146,13 @@ const Biometricos = () => {
   const [showWorkoutPopup, setShowWorkoutPopup] = useState(false);
   const navigate = useNavigate();
 
+  // BACKENDWHOOP: Mapa de deportes para traducción de IDs
+  const sportMap = {
+    '-1': 'Actividad', '0': 'Correr', '1': 'Ciclismo', '16': 'Béisbol', '17': 'Básquetbol', '18': 'Remo', '19': 'Esgrima', '20': 'Hockey', '21': 'Fútbol Americano', '22': 'Golf', '24': 'Hockey sobre hielo', '25': 'Lacrosse', '27': 'Rugby', '28': 'Vela', '29': 'Esquí', '30': 'Fútbol', '31': 'Softbol', '32': 'Squash', '33': 'Natación', '34': 'Tenis', '35': 'Atletismo', '36': 'Voleibol', '37': 'Waterpolo', '38': 'Lucha', '39': 'Boxeo', '42': 'Danza', '43': 'Pilates', '44': 'Yoga', '45': 'Pesas', '47': 'Esquí de fondo', '48': 'Fitness funcional', '49': 'Duatlón', '51': 'Gimnasia', '52': 'Senderismo', '53': 'Equitación', '55': 'Kayak', '56': 'Artes marciales', '57': 'Ciclismo de montaña', '59': 'Powerlifting', '60': 'Escalada', '61': 'Paddleboard', '62': 'Triatlón', '63': 'Caminata', '64': 'Surf', '65': 'Elíptica', '66': 'Stairmaster', '70': 'Meditación', '71': 'Otro', '73': 'Buceo', '74': 'Operaciones tácticas', '75': 'Operaciones médicas', '76': 'Operaciones aéreas', '77': 'Operaciones acuáticas', '82': 'Ultimate', '83': 'Escalador', '84': 'Saltar la cuerda', '85': 'Fútbol australiano', '86': 'Skateboarding', '87': 'Entrenador', '88': 'Baño de hielo', '89': 'Commuting', '90': 'Gaming', '91': 'Snowboard', '92': 'Motocross', '93': 'Caddie', '94': 'Carrera de obstáculos', '95': 'Motor Racing', '96': 'HIIT'
+  };
+
   useEffect(() => {
+    // BACKENDWHOOP: Verificación WHOOP
     if (!whoopService.isAuthenticated()) {
       navigate('/whoop-login');
       return;
@@ -150,7 +160,9 @@ const Biometricos = () => {
     const fetchData = async () => {
       try {
         const end = new Date();
-        const start = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000); // 8 días para asegurar semana completa
+        const start = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+        
+        // BACKENDWHOOP: Llamadas API 
         const [sleep, cycles, rec, profile, workoutsResp] = await Promise.all([
           whoopService.getSleepData(start.toISOString(), end.toISOString()),
           whoopService.getCycles(start.toISOString(), end.toISOString()),
@@ -158,6 +170,8 @@ const Biometricos = () => {
           whoopService.getProfile(),
           whoopService.getWorkouts(start.toISOString(), end.toISOString())
         ]);
+        
+        // BACKENDWHOOP:  actualizacion de estados 
         setSleepData(sleep?.records || []);
         setCycleData(cycles?.records || []);
         setRecoveryData(rec?.records || []);
@@ -173,7 +187,7 @@ const Biometricos = () => {
     fetchData();
   }, [navigate]);
 
-  // --- DATOS DEL DÍA ANTERIOR ---
+  // datos del dia de antes
   const getYesterday = () => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -184,12 +198,12 @@ const Biometricos = () => {
   const yesterday = getYesterday();
   const yesterdayStr = yesterday.toISOString().slice(0,10);
 
-  // Ciclo y recovery del día anterior (score_state === 'SCORED')
+  // BACKENDWHOOP: procesamiento de datos del dia de antes
   const yesterdayCycle = cycleData.find(c => c.start.slice(0,10) === yesterdayStr && c.score_state === 'SCORED');
   const yesterdayRecovery = recoveryData.find(r => r.created_at.slice(0,10) === yesterdayStr && r.score_state === 'SCORED');
   const yesterdaySleep = sleepData.filter(s => !s.nap && s.start.slice(0,10) === yesterdayStr && s.score_state === 'SCORED')[0];
 
-  // Métricas del día anterior
+  // BACKENDWHOOP: metricas calculadas a partir de datos de WHOOP
   const recoveryPct = yesterdayRecovery?.score?.recovery_score || 0;
   const sleepPerfPct = yesterdaySleep?.score?.sleep_performance_percentage ?? yesterdayRecovery?.score?.sleep_performance_percentage ?? 0;
   const hrv = Math.round(yesterdayRecovery?.score?.hrv_rmssd_milli || 0);
@@ -203,7 +217,7 @@ const Biometricos = () => {
   const sleepDeep = yesterdaySleep?.score?.stage_summary?.total_slow_wave_sleep_time_milli ? (yesterdaySleep.score.stage_summary.total_slow_wave_sleep_time_milli / (1000*60*60)).toFixed(1) : 0;
   const sleepDuration = yesterdaySleep ? ((new Date(yesterdaySleep.end) - new Date(yesterdaySleep.start)) / (1000*60*60)).toFixed(1) : 0;
 
-  // --- DATOS SEMANALES ---
+  // semanal
   const groupByDay = (arr, key='start') => {
     const map = {};
     arr.forEach(item => {
@@ -220,28 +234,27 @@ const Biometricos = () => {
     return d.toISOString().slice(0,10);
   });
 
+  // BACKENDWHOOP: procesamiento de datos semanales de WHOOP
   const recoveryByDay = groupByDay(recoveryData, 'created_at');
   const sleepByDay = groupByDay(sleepData, 'start');
   const cycleByDay = groupByDay(cycleData, 'start');
 
-  // Process sleep performance data
+  // BACKENDWHOOP: procesamiento de datos de sueño semanales
   const sleepPerfWeek = weekDays.map(day => {
     const sleep = (sleepByDay[day]||[]).find(s => !s.nap && s.score_state === 'SCORED');
     return sleep?.score?.sleep_performance_percentage ?? 0;
   });
 
-  // Process recovery data
+  // BACKENDWHOOP: procesamiento de datos de recuperación semanales
   const recoveryPctWeek = weekDays.map(day => {
     const rec = (recoveryByDay[day]||[]).find(r => r.score_state === 'SCORED');
     return rec?.score?.recovery_score ?? 0;
   });
 
-  // Process calories data - ensure precise conversion from kilojoules if needed
+  // BACKENDWHOOP: procesamiento de datos de calorías semanales
   const caloriesWeek = weekDays.map(day => {
     const cyc = (cycleByDay[day]||[]).find(c => c.score_state === 'SCORED');
     if (!cyc) return 0;
-    
-    // Get raw calories or convert from kilojoules if needed
     if (cyc.score?.calories !== undefined) {
       return Number(cyc.score.calories);
     } else if (cyc.score?.kilojoule !== undefined) {
@@ -250,13 +263,18 @@ const Biometricos = () => {
     return 0;
   });
 
-  // --- DATOS SEMANALES DE WORKOUTS ---
-  // Filtrar workouts de la semana (score_state === 'SCORED')
+  // BACKENDWHOOP: procesamiento de datos de entrenamientos
   const weekWorkouts = workouts.filter(w => w.score_state === 'SCORED');
-  // Map de deportes
-  const sportMap = {
-    '-1': 'Actividad', '0': 'Correr', '1': 'Ciclismo', '16': 'Béisbol', '17': 'Básquetbol', '18': 'Remo', '19': 'Esgrima', '20': 'Hockey', '21': 'Fútbol Americano', '22': 'Golf', '24': 'Hockey sobre hielo', '25': 'Lacrosse', '27': 'Rugby', '28': 'Vela', '29': 'Esquí', '30': 'Fútbol', '31': 'Softbol', '32': 'Squash', '33': 'Natación', '34': 'Tenis', '35': 'Atletismo', '36': 'Voleibol', '37': 'Waterpolo', '38': 'Lucha', '39': 'Boxeo', '42': 'Danza', '43': 'Pilates', '44': 'Yoga', '45': 'Pesas', '47': 'Esquí de fondo', '48': 'Fitness funcional', '49': 'Duatlón', '51': 'Gimnasia', '52': 'Senderismo', '53': 'Equitación', '55': 'Kayak', '56': 'Artes marciales', '57': 'Ciclismo de montaña', '59': 'Powerlifting', '60': 'Escalada', '61': 'Paddleboard', '62': 'Triatlón', '63': 'Caminata', '64': 'Surf', '65': 'Elíptica', '66': 'Stairmaster', '70': 'Meditación', '71': 'Otro', '73': 'Buceo', '74': 'Operaciones tácticas', '75': 'Operaciones médicas', '76': 'Operaciones aéreas', '77': 'Operaciones acuáticas', '82': 'Ultimate', '83': 'Escalador', '84': 'Saltar la cuerda', '85': 'Fútbol australiano', '86': 'Skateboarding', '87': 'Entrenador', '88': 'Baño de hielo', '89': 'Commuting', '90': 'Gaming', '91': 'Snowboard', '92': 'Motocross', '93': 'Caddie', '94': 'Carrera de obstáculos', '95': 'Motor Racing', '96': 'HIIT'
-  };
+  const totalStrain = weekWorkouts.reduce((a,w)=>a+(w.score?.strain||0),0);
+  const totalMinutes = weekWorkouts.reduce((a,w)=>a+((new Date(w.end)-new Date(w.start))/(1000*60)),0);
+  const totalCalories = weekWorkouts.reduce((a,w)=>a+(w.score?.calories || (w.score?.kilojoule ? w.score.kilojoule*0.239006 : 0)),0);
+
+  // BACKENDWHOOP: datos de actividad física de ayer
+  const yesterdayWorkouts = workouts.filter(w => w.score_state === 'SCORED' && w.start.slice(0,10) === yesterdayStr);
+  const actividadFisicaAyer = yesterdayWorkouts.length > 0
+    ? `Actividad física: ${yesterdayWorkouts.map(w => sportMap[w.sport_id] || 'Otro').join(', ')}`
+    : 'No se realizó actividad física';
+
   // Tipo de entrenamiento más frecuente
   const sportCount = {};
   weekWorkouts.forEach(w => {
@@ -265,10 +283,7 @@ const Biometricos = () => {
   });
   const mostFrequentSportId = Object.entries(sportCount).sort((a,b)=>b[1]-a[1])[0]?.[0];
   const mostFrequentSport = sportMap[mostFrequentSportId] || 'Otro';
-  // Esfuerzo total (strain), minutos y calorías
-  const totalStrain = weekWorkouts.reduce((a,w)=>a+(w.score?.strain||0),0);
-  const totalMinutes = weekWorkouts.reduce((a,w)=>a+((new Date(w.end)-new Date(w.start))/(1000*60)),0);
-  const totalCalories = weekWorkouts.reduce((a,w)=>a+(w.score?.calories || (w.score?.kilojoule ? w.score.kilojoule*0.239006 : 0)),0);
+  
   // Interpretación
   let interpretacionWorkout = 'Actividad física baja esta semana.';
   if (totalMinutes >= 150) interpretacionWorkout = '¡Excelente! Cumpliste la recomendación de actividad física semanal.';
@@ -293,17 +308,17 @@ const Biometricos = () => {
   const WeeklyDetailPopup = ({open, onClose, title, data, color, weekDays, unit}) => {
     if (!open) return null;
     
-    // Calculate statistics with precise decimal handling
+    // statistics
     const avg = Number((data.reduce((a,b)=>a+b,0)/data.length).toFixed(2));
     const min = Number(Math.min(...data).toFixed(2));
     const max = Number(Math.max(...data).toFixed(2));
     
-    // Detect significant changes between consecutive days (15% threshold)
+    // Detect significant changes between consecutive days 
     const changes = data.map((v, i) =>
       i > 0 && Math.abs(v - data[i-1]) > 0.15 * data[i-1] ? i : null
     ).filter(i => i !== null);
 
-    // Set display maximum with appropriate scaling
+    // Set display maximum 
     let displayMax = max;
     if (unit === '%') {
       displayMax = Math.min(100, max * 1.1); // Cap at 100% for percentages
@@ -756,6 +771,7 @@ const Biometricos = () => {
         doc.text(expl, 10, y);
         y += expl.length * 6 + 4;
       });
+      
       // Guardar PDF
       doc.save(`reporte_biometrico_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
@@ -799,11 +815,11 @@ const Biometricos = () => {
     );
   };
 
-  // --- NUEVO: actividad física de ayer ---
-  const yesterdayWorkouts = workouts.filter(w => w.score_state === 'SCORED' && w.start.slice(0,10) === yesterdayStr);
-  const actividadFisicaAyer = yesterdayWorkouts.length > 0
-    ? `Actividad física: ${yesterdayWorkouts.map(w => sportMap[w.sport_id] || 'Otro').join(', ')}`
-    : 'No se realizó actividad física';
+  // BACKENDWHOOP: Función para cerrar sesión de WHOOP
+  const handleLogout = () => {
+    whoopService.logout();
+    navigate('/whoop-login');
+  };
 
   // --- UI ---
   if (loading) return <div className="biometricos-loading">Cargando datos de WHOOP...</div>;
@@ -855,10 +871,7 @@ const Biometricos = () => {
           {localStorage.getItem('role') === 'admin' && (
             <button 
               className="logout-button" 
-              onClick={() => {
-                whoopService.logout();
-                navigate('/whoop-login');
-              }}
+              onClick={handleLogout}
               style={{
                 display: 'flex',
                 alignItems: 'center',
