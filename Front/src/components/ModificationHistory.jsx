@@ -204,6 +204,15 @@ const ModificationHistory = ({ projectId }) => {
               );
             }
             break;
+          case "sprintNumber":
+            if (value.oldValue !== undefined && value.newValue !== undefined) {
+              items.push(
+                <li key={key}>
+                  Se modificó el número de sprints de {String(value.oldValue)} a {String(value.newValue)}
+                </li>
+              );
+            }
+            break;
           case "EP":
           case "RF":
           case "RNF":
@@ -250,9 +259,9 @@ const ModificationHistory = ({ projectId }) => {
     );
   }
 
-  const sortedHistory = [...history].sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  );
+  const sortedHistory = [...history]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 5); // Limit to 5 items
 
   return (
     <div className="modification-history">
