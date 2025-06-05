@@ -74,12 +74,18 @@ export const getProject = async (req, res) => {
 // Funcion para añadir un nuevo proyecto
 export const postProject = async (req, res) => {
   try {
-    const project = await db.collection("proyectos").add(req.body);
+    const projectData = {
+      ...req.body,
+      color: req.body.color || "#7a5a96", // Default color if not provided
+    };
+
+    const project = await db.collection("proyectos").add(projectData);
     res.status(200).json({
       project_added: true,
       id: project.id,
       descripcion: req.body.descripcion,
       estatus: req.body.estatus,
+      color: projectData.color,
     }); // Mandar estatus 200 (ok) y un json con un mensaje de que se añadió el proyecto.
   } catch (err) {
     console.error("Firebase Error:", err);

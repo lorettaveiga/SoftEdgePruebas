@@ -185,7 +185,7 @@ function PerfilPopup({ isOpen, onClose, userId }) {
   return (
     <>
       <div className="popup-overlay" onClick={onClose}>
-        <div className="perfil-popup-container" onClick={(e) => e.stopPropagation()}>
+        <div className="perfil-popup-container smaller-popup-height" onClick={(e) => e.stopPropagation()}>
           <button className="close-popup-button" onClick={onClose}>
             &times;
           </button>

@@ -737,7 +737,7 @@ function RevisionIA() {
         </div>
 
         <div className="buttons-container">
-          <button className="confirm-button" onClick={handleConfirm}>
+          <button className="edit-project-button" onClick={handleConfirm}>
             Confirmar
           </button>
           <button

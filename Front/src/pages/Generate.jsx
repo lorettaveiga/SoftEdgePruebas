@@ -74,6 +74,7 @@ function Generate() {
    "sprintNumber": ${sprints},
    "sprintDuration": ${sprintDuration},
    "estatus": "Abierto" or "Cerrado",
+   "color": "#7a5a96",
    "EP": [
      {
        "id": "EP01",
@@ -125,6 +126,7 @@ function Generate() {
  Tasks should be meaningful and cover all acceptance criteria.
  You MUST include the 'sprintNumber' for the generated project (value: ${sprints}).
  You MUST include the 'sprintDuration' for the generated project (value: ${sprintDuration} weeks).
+ You MUST include the 'color' field for the project (default value: "#7a5a96").
  Every task should have all of the corresponding fields: id, titulo, descripcion, prioridad, asignado, estado, and sprint.
  Task IDs should be unique within the project (format: T01, T02, etc.).
  Distribute tasks evenly across ${sprints} sprints.
