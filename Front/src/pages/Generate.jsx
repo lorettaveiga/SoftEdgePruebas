@@ -74,7 +74,7 @@ function Generate() {
    "sprintNumber": ${sprints},
    "sprintDuration": ${sprintDuration},
    "estatus": "Abierto" or "Cerrado",
-   "color": "#7a5a96", // Default color for the project
+   "color": "#7a5a96",
    "EP": [
      {
        "id": "EP01",
