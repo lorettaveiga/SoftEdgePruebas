@@ -61,7 +61,7 @@ export const getProject = async (req, res) => {
       RF: project.data().RF,
       RNF: project.data().RNF,
       fechaCreacion: project.data().fechaCreacion,
-      modificationHistory: project.data().modificationHistory || [],
+      modificationHistory: project.data().modificationHistory.slice(-30) || [],
       sprintNumber: project.data().sprintNumber || 0,
       sprintDuration: project.data().sprintDuration || 2,
     });
