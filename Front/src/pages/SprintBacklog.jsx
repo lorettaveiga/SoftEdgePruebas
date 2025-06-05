@@ -6,6 +6,7 @@ import SuccessPopup from "../components/SuccessPopup";
 import TopAppBar from "../components/TopAppBar";
 import SprintDetails from "../components/SprintDetails";
 import "../css/SprintBacklog.css";
+import "../css/Spinner.css";
 
 const SprintBacklog = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -19,7 +20,7 @@ const SprintBacklog = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [sprints, setSprints] = useState([]);
-  const [sprintDuration, setSprintDuration] = useState(2); // Add this state
+  const [sprintDuration, setSprintDuration] = useState(2);
 
   // Función para generar sprints dinámicamente
   const generateSprints = (
@@ -29,7 +30,7 @@ const SprintBacklog = () => {
     projectCreatedAt = null
   ) => {
     const sprints = [];
-    const durationDays = duration * 7; // Convert weeks to days
+    const durationDays = duration * 7; // Convierte semanas a días
 
     for (let i = 1; i <= sprintNumber; i++) {
       const startDate = new Date(projectCreatedAt || new Date());
@@ -53,7 +54,7 @@ const SprintBacklog = () => {
         .map((task) => ({
           title: task.titulo || task.title,
           description: task.descripcion || task.description,
-          estado: task.estado || 'Pendiente',
+          estado: task.estado || "Pendiente",
           priority: task.prioridad || task.priority,
           assignee: task.asignado || task.assignee,
         }));
@@ -134,7 +135,7 @@ const SprintBacklog = () => {
     if (projectId) {
       fetchData();
     }
-  }, [projectId]);
+  }, [projectId, allTasks]);
 
   const handleSprintClick = (sprint) => {
     console.log("Sprint seleccionado:", sprint);
@@ -145,6 +146,8 @@ const SprintBacklog = () => {
     setSelectedSprint(null);
   };
 
+  
+
   if (loading) {
     return (
       <div className="white-container">
@@ -153,9 +156,9 @@ const SprintBacklog = () => {
           <div className="main-title">
             <h1>Sprint Backlog</h1>
           </div>
-          <div className="dashboard-loading">
+          <div className="loading-popup">
             <div className="spinner"></div>
-            <p>Cargando proyecto...</p>
+            <p className="loading-text">Cargando proyecto...</p>
           </div>
         </div>
       </div>
@@ -200,62 +203,85 @@ const SprintBacklog = () => {
 
           <div className="sprints-grid">
             {sprints.length > 0 ? (
-              sprints.map((sprint, index) => (
-                <div
-                  key={index}
-                  className="sprint-card"
-                  onClick={() => handleSprintClick(sprint)}
-                >
-                  <h3 className="sprint-title">SPRINT {sprint.number}</h3>
-                  <div className="sprint-status-container">
-                    <span
-                      className={`status-badge ${sprint.status
-                        .toLowerCase()
-                        .replace(/\s+/g, "-")}`}
-                    >
-                      {sprint.status}
-                    </span>
-                  </div>
-                  <div className="sprint-dates">
-                    <div className="date-item">
-                      <span className="calendar-icon">📅</span>
-                      <span className="date-text">
-                        {new Date(sprint.startDate).toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
+              <>
+                {sprints.map((sprint, index) => (
+                  <div
+                    key={index}
+                    className="sprint-card"
+                    onClick={() => handleSprintClick(sprint)}
+                  >
+                    <h3 className="sprint-title">SPRINT {sprint.number}</h3>
+                    <div className="sprint-status-container">
+                      <span
+                        className={`status-badge ${sprint.status
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
+                        {sprint.status}
                       </span>
                     </div>
-                    <div className="date-separator">→</div>
-                    <div className="date-item">
-                      <span className="calendar-icon">📅</span>
-                      <span className="date-text">
-                        {new Date(sprint.endDate).toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="sprint-tasks">
-                    {sprint.tasks?.map((task, taskIndex) => (
-                      <div key={taskIndex} className="sprint-task">
-                        <h4>{task.title}</h4>
-                        <p>{task.description}</p>
-                        <span
-                          className={`task-status-badge ${(task.estado || 'pendiente')
-                            .toLowerCase()
-                            .replace(/\s+/g, "-")}`}
-                        >
-                          {task.estado || 'Pendiente'}
+                    <div className="sprint-dates">
+                      <div className="date-item">
+                        <span className="calendar-icon">📅</span>
+                        <span className="date-text">
+                          {new Date(sprint.startDate).toLocaleDateString(
+                            "es-ES",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            }
+                          )}
                         </span>
                       </div>
-                    ))}
+                      <div className="date-separator">→</div>
+                      <div className="date-item">
+                        <span className="calendar-icon">📅</span>
+                        <span className="date-text">
+                          {new Date(sprint.endDate).toLocaleDateString(
+                            "es-ES",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="sprint-tasks">
+                      {sprint.tasks?.map((task, taskIndex) => (
+                        <div key={taskIndex} className="sprint-task">
+                          <h4>{task.title}</h4>
+                          <p>{task.description}</p>
+                          <span
+                            className={`task-status-badge ${(
+                              task.estado || "pendiente"
+                            )
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            {task.estado || "Pendiente"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {/* Add Sprint Card */}
+                <div
+                  className="sprint-card add-sprint-card"
+                  onClick={handleAddSprint}
+                >
+                  <div className="add-sprint-content">
+                    <div className="add-sprint-icon">+</div>
+                    <h3 className="add-sprint-title">Agregar Sprint</h3>
+                    <p className="add-sprint-description">
+                      Haz clic para añadir un nuevo sprint al proyecto
+                    </p>
                   </div>
                 </div>
-              ))
+              </>
             ) : (
               <div className="no-sprints">
                 <p>No hay sprints disponibles</p>
@@ -266,13 +292,16 @@ const SprintBacklog = () => {
       </div>
 
       {selectedSprint && (
-        <SprintDetails
-          sprint={selectedSprint}
-          sprintTasks={selectedSprint?.tasks || []}
-          onClose={handleCloseSprintDetails}
-          setAllTasks={setSprints}
-          projectId={projectId}
-        />
+        <>
+          {console.log("Backlog sprint details")}
+          <SprintDetails
+            sprint={selectedSprint}
+            sprintTasks={selectedSprint?.tasks || []}
+            onClose={handleCloseSprintDetails}
+            setAllTasks={setSprints}
+            projectId={projectId}
+          />
+        </>
       )}
 
       <ErrorPopup message={error} onClose={() => setError(null)} />

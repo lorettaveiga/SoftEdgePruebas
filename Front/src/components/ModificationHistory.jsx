@@ -20,7 +20,6 @@ const ModificationHistory = ({ projectId }) => {
           throw new Error("Error al cargar el historial");
         }
         const data = await response.json();
-        console.log("Historial recibido:", data.modificationHistory);
         setHistory(data.modificationHistory || []);
       } catch (err) {
         setError(err.message);
@@ -65,9 +64,23 @@ const ModificationHistory = ({ projectId }) => {
   };
 
   const renderChangeList = (changes) => {
+    if (!changes || typeof changes !== "object") {
+      return <ul className="change-list"><li>No hay cambios registrados</li></ul>;
+    }
+
     const items = [];
     Object.entries(changes).forEach(([key, value]) => {
-      if (Array.isArray(value) && ["EP", "RF", "RNF", "HU"].includes(key)) {
+      if (key === "MEMBER_ADDED" || key === "MEMBER_REMOVED") {
+        // Manejar cambios de miembros
+        value.forEach((memberChange, index) => {
+          const action = key === "MEMBER_ADDED" ? "agregó" : "removió";
+          items.push(
+            <li key={`${key}-${index}`}>
+              Se {action} a <b>{memberChange.name} {memberChange.lastname || ""}</b> ({memberChange.email}) del equipo del proyecto.
+            </li>
+          );
+        });
+      } else if (Array.isArray(value) && ["EP", "RF", "RNF", "HU"].includes(key)) {
         value.forEach((change) => {
           const id = change.id;
           if (change.changes.nuevo) {
@@ -84,7 +97,12 @@ const ModificationHistory = ({ projectId }) => {
             );
           } else {
             Object.entries(change.changes).forEach(([field, vals]) => {
-              if (vals && typeof vals === 'object' && vals.oldValue !== undefined && vals.newValue !== undefined) {
+              if (
+                vals &&
+                typeof vals === "object" &&
+                vals.oldValue !== undefined &&
+                vals.newValue !== undefined
+              ) {
                 const fieldLabel =
                   field === "data"
                     ? "descripción"
@@ -96,16 +114,30 @@ const ModificationHistory = ({ projectId }) => {
 
                 // Handle different types of values
                 let oldValueDisplay, newValueDisplay;
-                
+
                 if (field === "tasks") {
                   // For tasks, just show that tasks were modified
-                  oldValueDisplay = Array.isArray(vals.oldValue) ? `${vals.oldValue.length} tareas` : "tareas";
-                  newValueDisplay = Array.isArray(vals.newValue) ? `${vals.newValue.length} tareas` : "tareas";
-                } else if (Array.isArray(vals.oldValue) || Array.isArray(vals.newValue)) {
+                  oldValueDisplay = Array.isArray(vals.oldValue)
+                    ? `${vals.oldValue.length} tareas`
+                    : "tareas";
+                  newValueDisplay = Array.isArray(vals.newValue)
+                    ? `${vals.newValue.length} tareas`
+                    : "tareas";
+                } else if (
+                  Array.isArray(vals.oldValue) ||
+                  Array.isArray(vals.newValue)
+                ) {
                   // For other arrays, show count
-                  oldValueDisplay = Array.isArray(vals.oldValue) ? `${vals.oldValue.length} elementos` : String(vals.oldValue);
-                  newValueDisplay = Array.isArray(vals.newValue) ? `${vals.newValue.length} elementos` : String(vals.newValue);
-                } else if (typeof vals.oldValue === 'object' || typeof vals.newValue === 'object') {
+                  oldValueDisplay = Array.isArray(vals.oldValue)
+                    ? `${vals.oldValue.length} elementos`
+                    : String(vals.oldValue);
+                  newValueDisplay = Array.isArray(vals.newValue)
+                    ? `${vals.newValue.length} elementos`
+                    : String(vals.newValue);
+                } else if (
+                  typeof vals.oldValue === "object" ||
+                  typeof vals.newValue === "object"
+                ) {
                   // For objects, show a generic message
                   oldValueDisplay = "configuración anterior";
                   newValueDisplay = "configuración nueva";
@@ -118,14 +150,17 @@ const ModificationHistory = ({ projectId }) => {
                 if (field === "tasks") {
                   items.push(
                     <li key={`${key}-${id}-${field}`}>
-                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se modificaron las tareas ({oldValueDisplay} → {newValueDisplay})
+                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se
+                      modificaron las tareas ({oldValueDisplay} →{" "}
+                      {newValueDisplay})
                     </li>
                   );
                 } else {
                   items.push(
                     <li key={`${key}-${id}-${field}`}>
-                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se cambió{" "}
-                      <b>{fieldLabel}</b> de "{oldValueDisplay}" a "{newValueDisplay}"
+                      En {getRequirementTypeSingular(key)} <b>{id}</b>, se
+                      cambió <b>{fieldLabel}</b> de "{oldValueDisplay}" a "
+                      {newValueDisplay}"
                     </li>
                   );
                 }
@@ -133,14 +168,14 @@ const ModificationHistory = ({ projectId }) => {
             });
           }
         });
-      } else if (value && typeof value === 'object') {
+      } else if (value && typeof value === "object") {
         switch (key) {
           case "nombreProyecto":
             if (value.oldValue !== undefined && value.newValue !== undefined) {
               items.push(
                 <li key={key}>
-                  Se cambió el nombre del proyecto de "{String(value.oldValue)}" a "
-                  {String(value.newValue)}"
+                  Se cambió el nombre del proyecto de "{String(value.oldValue)}"
+                  a "{String(value.newValue)}"
                 </li>
               );
             }
@@ -149,7 +184,8 @@ const ModificationHistory = ({ projectId }) => {
             if (value.oldValue !== undefined && value.newValue !== undefined) {
               items.push(
                 <li key={key}>
-                  Se cambió la descripción del proyecto de "{String(value.oldValue)}" a "{String(value.newValue)}"
+                  Se cambió la descripción del proyecto de "
+                  {String(value.oldValue)}" a "{String(value.newValue)}"
                 </li>
               );
             } else {
@@ -162,7 +198,17 @@ const ModificationHistory = ({ projectId }) => {
             if (value.oldValue !== undefined && value.newValue !== undefined) {
               items.push(
                 <li key={key}>
-                  Se cambió la duración de sprints de {String(value.oldValue)} semanas a {String(value.newValue)} semanas
+                  Se cambió la duración de sprints de {String(value.oldValue)}{" "}
+                  semanas a {String(value.newValue)} semanas
+                </li>
+              );
+            }
+            break;
+          case "sprintNumber":
+            if (value.oldValue !== undefined && value.newValue !== undefined) {
+              items.push(
+                <li key={key}>
+                  Se modificó el número de sprints de {String(value.oldValue)} a {String(value.newValue)}
                 </li>
               );
             }
@@ -213,9 +259,9 @@ const ModificationHistory = ({ projectId }) => {
     );
   }
 
-  const sortedHistory = [...history].sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  );
+  const sortedHistory = [...history]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 5); // Limit to 5 items
 
   return (
     <div className="modification-history">

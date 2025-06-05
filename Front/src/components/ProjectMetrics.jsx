@@ -45,11 +45,22 @@ const ProjectMetrics = ({ ...props }) => {
 
   const sprintProgress = (sprint) => {
     const sprintTasks = sprint.tasks.length;
-    const completedTasks = sprint.tasks.filter(
-      (task) => task.estado === "Completado"
-    ).length;
+
+    const inProgressTasks = sprint.tasks.filter((task) => {
+      const status = task.estado?.trim().toLowerCase();
+      return status === "en progreso" || status === "in progress";
+    }).length;
+
+    const completedTasks = sprint.tasks.filter((task) => {
+      const status = task.estado?.trim().toLowerCase();
+      return status === "completado" || status === "completed";
+    }).length;
+
     return sprintTasks > 0
-      ? ((completedTasks / sprintTasks) * 100).toFixed(2)
+      ? (
+          (completedTasks / sprintTasks) * 100 +
+          (inProgressTasks / 2 / sprintTasks) * 100
+        ).toFixed(2)
       : 0;
   };
 
@@ -123,6 +134,37 @@ const ProjectMetrics = ({ ...props }) => {
                   Número de tareas totales:{" "}
                   <strong>{sprint.tasks.length}</strong>
                 </p>
+                {sprint.tasks.length != 0 && (
+                  <>
+                    <p>
+                      Tareas en progreso:{" "}
+                      <strong>
+                        {
+                          sprint.tasks.filter((task) => {
+                            const status = task.estado?.trim().toLowerCase();
+                            return (
+                              status === "en progreso" ||
+                              status === "in progress"
+                            );
+                          }).length
+                        }
+                      </strong>
+                    </p>
+                    <p>
+                      Tareas completadas:{" "}
+                      <strong>
+                        {
+                          sprint.tasks.filter((task) => {
+                            const status = task.estado?.trim().toLowerCase();
+                            return (
+                              status === "completado" || status === "completed"
+                            );
+                          }).length
+                        }
+                      </strong>
+                    </p>
+                  </>
+                )}
                 <p>
                   Progreso: <strong>{sprintProgress(sprint)}%</strong>
                 </p>

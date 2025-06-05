@@ -23,6 +23,12 @@ function PerfilPopup({ isOpen, onClose, userId }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  const getInitials = (name, lastname) => {
+    const firstInitial = name ? name[0] : '';
+    const lastInitial = lastname ? lastname[0] : '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -104,10 +110,17 @@ function PerfilPopup({ isOpen, onClose, userId }) {
       const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
         method: "PUT",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: formData,
+        body: JSON.stringify({
+          username: editData.username,
+          lastname: editData.lastname,
+          email: editData.email,
+          phone: editData.phone,
+        }),
       });
+
 
       const result = await response.json();
 
@@ -129,7 +142,7 @@ function PerfilPopup({ isOpen, onClose, userId }) {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (
       !passwordData.currentPassword ||
       !passwordData.newPassword ||
@@ -142,9 +155,29 @@ function PerfilPopup({ isOpen, onClose, userId }) {
       setErrorMessage("Las contraseñas no coinciden.");
       return;
     }
-    console.log("Contraseña cambiada:", passwordData);
-    setShowPasswordPopup(false);
-    setSuccessMessage("¡La contraseña se ha cambiado con éxito!");
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/${userId}/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccessMessage("¡La contraseña se ha cambiado con éxito!");
+        setShowPasswordPopup(false);
+      } else {
+        setErrorMessage(result.message || "Error al cambiar la contraseña.");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      setErrorMessage("Ocurrió un error al cambiar la contraseña.");
+    }
   };
 
   if (!isOpen) return null;
@@ -156,18 +189,25 @@ function PerfilPopup({ isOpen, onClose, userId }) {
           <button className="close-popup-button" onClick={onClose}>
             &times;
           </button>
-          
+
           <div className="perfil-content">
             <div className="perfil-left">
               <div className="profile-picture-container">
-                <img
-
-                  className="perfil-picture"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/default-profile.png";
-                  }}
-                />
+                {previewImage && previewImage.startsWith("data:image") ? (
+                  <img
+                    src={previewImage}
+                    alt="Profile"
+                    className="perfil-picture"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/default-profile.png";
+                    }}
+                  />
+                ) : (
+                  <div className="profile-initials">
+                    {getInitials(editData.username, editData.lastname)}
+                  </div>
+                )}
                 {isEditing && (
                   <div className="image-upload-container">
                     <label htmlFor="profile-image-upload" className="upload-label">
@@ -247,35 +287,19 @@ function PerfilPopup({ isOpen, onClose, userId }) {
                     <h2>
                       {userData.username || "X"} {userData.lastname || ""}
                     </h2>
-                    <p>
-                      <strong>Correo:</strong> {userData.email}
-                    </p>
-                    <p>
-                      <strong>Teléfono:</strong> {userData.phone}
-                    </p>
-                    <button
-                      className="edit-info-button"
-                      onClick={() => setIsEditing(true)}
-                    >
+                    <p><strong>Correo:</strong> {userData.email}</p>
+                    <p><strong>Teléfono:</strong> {userData.phone}</p>
+                    <button className="edit-info-button" onClick={() => setIsEditing(true)}>
                       Editar Información
                     </button>
                   </>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
+                  <div className="loading-container">
                     <div className="spinner"></div>
                     <p>Cargando información del usuario...</p>
                   </div>
                 )}
-                <button
-                  className="change-password-button"
-                  onClick={() => setShowPasswordPopup(true)}
-                >
+                <button className="change-password-button" onClick={() => setShowPasswordPopup(true)}>
                   Cambiar Contraseña
                 </button>
               </div>
@@ -285,14 +309,8 @@ function PerfilPopup({ isOpen, onClose, userId }) {
       </div>
 
       {showPasswordPopup && (
-        <div
-          className="popup-overlay"
-          onClick={() => setShowPasswordPopup(false)}
-        >
-          <div
-            className="popup-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="popup-overlay" onClick={() => setShowPasswordPopup(false)}>
+          <div className="password-popup-container" onClick={(e) => e.stopPropagation()}>
             <h2>Cambiar Contraseña</h2>
             <label>
               Contraseña Actual:
@@ -322,10 +340,7 @@ function PerfilPopup({ isOpen, onClose, userId }) {
               />
             </label>
             <div className="popup-buttons">
-              <button
-                className="cancel-button"
-                onClick={() => setShowPasswordPopup(false)}
-              >
+              <button className="cancel-button" onClick={() => setShowPasswordPopup(false)}>
                 Cancelar
               </button>
               <button className="save-button" onClick={handleSavePassword}>
@@ -337,17 +352,11 @@ function PerfilPopup({ isOpen, onClose, userId }) {
       )}
 
       {errorMessage && (
-        <ErrorPopup
-          message={errorMessage}
-          onClose={() => setErrorMessage("")}
-        />
+        <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
       )}
 
       {successMessage && (
-        <SuccessPopup
-          message={successMessage}
-          onClose={() => setSuccessMessage("")}
-        />
+        <SuccessPopup message={successMessage} onClose={() => setSuccessMessage("")} />
       )}
     </>
   );

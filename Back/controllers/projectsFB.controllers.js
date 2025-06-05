@@ -109,6 +109,40 @@ export const linkUserToProject = async (req, res) => {
         VALUES (@UserID, @ProjectID)
       `);
 
+    // Obtener información del usuario para el historial
+    const userResult = await pool
+      .request()
+      .input("UserID", sql.Int, userId)
+      .query("SELECT username, lastname, email FROM dbo.Users WHERE UserID = @UserID");
+
+    const user = userResult.recordset[0];
+
+    // Agregar entrada al historial del proyecto
+    const projectRef = db.collection("proyectos").doc(projectId);
+    const projectDoc = await projectRef.get();
+
+    if (projectDoc.exists) {
+      const currentHistory = projectDoc.data().modificationHistory || [];
+      const newEntry = {
+        timestamp: new Date().toISOString(),
+        userId,
+        userName: user.username,
+        userLastname: user.lastname,
+        changes: {
+          MEMBER_ADDED: [
+            {
+              name: user.username,
+              lastname: user.lastname,
+              email: user.email,
+            },
+          ],
+        },
+      };
+      await projectRef.update({
+        modificationHistory: [...currentHistory, newEntry],
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "¡Usuario vinculado al proyecto exitosamente!",
@@ -131,6 +165,14 @@ export const unlinkUserFromProject = async (req, res) => {
 
     const pool = await sqlConnect();
 
+    // Obtener información del usuario antes de eliminarlo
+    const userResult = await pool
+      .request()
+      .input("UserID", sql.Int, userId)
+      .query("SELECT username, lastname, email FROM dbo.Users WHERE UserID = @UserID");
+
+    const user = userResult.recordset[0];
+
     // Eliminar el usuario y el proyecto de la tabla Users_Projects
     await pool
       .request()
@@ -140,15 +182,39 @@ export const unlinkUserFromProject = async (req, res) => {
         WHERE UserID = @UserID AND ProjectID = @ProjectID
       `);
 
+    // Agregar entrada al historial del proyecto
+    const projectRef = db.collection("proyectos").doc(projectId);
+    const projectDoc = await projectRef.get();
+
+    if (projectDoc.exists) {
+      const currentHistory = projectDoc.data().modificationHistory || [];
+      const newEntry = {
+        timestamp: new Date().toISOString(),
+        userId,
+        userName: user.username,
+        userLastname: user.lastname,
+        changes: {
+          MEMBER_REMOVED: [
+            {
+              name: user.username,
+              lastname: user.lastname,
+              email: user.email,
+            },
+          ],
+        },
+      };
+      await projectRef.update({
+        modificationHistory: [...currentHistory, newEntry],
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "¡Usuario desvinculado del proyecto exitosamente!",
     });
   } catch (err) {
-    console.error("Failed to unlink user from proyect", err);
-    res
-      .status(500)
-      .json({ error: "Error al desvincular el usuario del proyecto." });
+    console.error("Failed to unlink user from project", err);
+    res.status(500).json({ error: "Error al desvincular el usuario del proyecto." });
   }
 };
 
@@ -408,9 +474,8 @@ export const uploadProjectImage = async (req, res) => {
 };
 
 export const updateTasks = async (req, res) => {
-
   try {
-    const { requirementType, elementId, tasks } = req.body
+    const { requirementType, elementId, tasks } = req.body;
     const projectId = req.params.id;
     const projectRef = db.collection("proyectos").doc(projectId);
     const projectDoc = await projectRef.get();
@@ -599,5 +664,57 @@ export const updateTaskStatus = async (req, res) => {
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
     res.status(500).json({ message: "Error al actualizar la tarea" });
+  }
+};
+
+// Funcion para agregar una entrada al historial de un proyecto
+export const addProjectHistory = async (req, res) => {
+  const { projectId } = req.params;
+  const { action, userId, userName, userLastname, targetUserId, details, timestamp } = req.body;
+
+  try {
+    if (!projectId || !action || !userId || !details || !timestamp) {
+      return res.status(400).json({ success: false, message: "Datos incompletos en la solicitud." });
+    }
+
+    const historyEntry = {
+      action,
+      userId,
+      userName,
+      userLastname,
+      targetUserId,
+      details,
+      timestamp,
+    };
+
+    // Agrega la entrada al historial del proyecto en Firestore
+    await db.collection("projects").doc(projectId).collection("history").add(historyEntry);
+
+    res.status(200).json({ success: true, message: "Historial actualizado correctamente." });
+  } catch (error) {
+    console.error("Error al agregar historial del proyecto:", error);
+    res.status(500).json({ success: false, message: "Error al agregar historial del proyecto." });
+  }
+};
+
+export const updateSprintNumber = async (req, res) => {
+  const { id } = req.params; // ID del proyecto
+  const { sprintNumber } = req.body; // Nuevo número de sprint
+
+  try {
+    const projectRef = db.collection("proyectos").doc(id);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+      return res.status(404).json({ message: "Proyecto no encontrado" });
+    }
+
+    // Actualiza el número de sprint en el proyecto
+    await projectRef.update({ sprintNumber });
+
+    res.status(200).json({ message: "Número de sprint actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar el número de sprint:", error);
+    res.status(500).json({ message: "Error al actualizar el número de sprint" });
   }
 };

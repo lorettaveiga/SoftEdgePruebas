@@ -7,6 +7,7 @@ import TopAppBar from "../components/TopAppBar";
 import ErrorPopup from "../components/ErrorPopup"; // Importamos el popup de error
 import SuccessPopup from "../components/SuccessPopup"; // Importamos el popup de éxito
 import ConfirmationPopup from "../components/ConfirmationPopup";
+import '../css/Spinner.css';
 
 function RevisionIA() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -73,6 +74,15 @@ function RevisionIA() {
       HU: parseSection(data.HU || data.userStories),
     };
   };
+
+  const handleCancelProjectEdit = () => {
+  setEditingProject(false);
+  // Restaurar los datos originales si es necesario
+  const sessionData = sessionStorage.getItem("projectData");
+  if (sessionData) {
+    setProjectData(JSON.parse(sessionData));
+  }
+};
 
   const handleDragStart = (item) => {
     setDraggedItem(item);
@@ -229,9 +239,31 @@ function RevisionIA() {
     };
   }, [location.state]);
 
+  useEffect(() => {
+    if (location.state?.showSuccess) {
+      setTimeout(() => {
+        setSuccessMessage("Proyecto generado exitosamente");
+      }, 200); // Small delay to ensure popup appears after mount
+      // Remove the flag so it doesn't show again on refresh
+      navigate(location.pathname, { replace: true, state: { ...location.state, showSuccess: undefined } });
+    }
+  }, [location.state, navigate, location.pathname]);
+
   const toggleExpand = (tabId) => {
-    setExpandedTab(expandedTab === tabId ? null : tabId);
+    if (expandedTab === tabId) {
+      setExpandedTab(null); // Contraer si ya está expandido
+    } else {
+      setExpandedTab(tabId); // Expandir la pestaña seleccionada
+    }
   };
+
+  const handleTabClick = (tabId) => {
+    if (activeTab !== tabId) {
+      setActiveTab(tabId); // Cambiar la pestaña activa
+    }
+    toggleExpand(tabId); // Expandir o contraer la pestaña
+  };
+
 
   const handleDeleteItem = (tabId, id) => {
     setDeleteAction({ tabId, id });
@@ -383,11 +415,11 @@ function RevisionIA() {
       const userId = localStorage.getItem("userId");
 
       if (!userId) {
-        setError("No se encontró el ID de usuario en el almacenamiento local."); // Muestra el popup de error
+        setError("No se encontró el ID de usuario en el almacenamiento local.");
         return;
       }
 
-      // Hacer Post al proyecto
+      // 1. Guardar el proyecto en la base de datos
       const response = await fetch(`${BACKEND_URL}/projectsFB/`, {
         method: "POST",
         headers: {
@@ -399,18 +431,14 @@ function RevisionIA() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(
-          `Error al guardar el proyecto: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al guardar el proyecto: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
       const projectResponse = await response.json();
       const projectId = projectResponse.id;
 
-      // Linkear el proyecto al usuario
+      // 2. Vincular el proyecto al usuario
       const linkResponse = await fetch(
         `${BACKEND_URL}/projectsFB/linkUserToProject`,
         {
@@ -428,20 +456,27 @@ function RevisionIA() {
 
       if (!linkResponse.ok) {
         const errorData = await linkResponse.json();
-        setError(
-          `Error al vincular el proyecto al usuario: ${
-            errorData.message || "Error desconocido"
-          }`
-        ); // Muestra el popup de error
+        setError(`Error al vincular el proyecto al usuario: ${errorData.message || "Error desconocido"}`);
         return;
       }
 
+
       setSuccessMessage("Proyecto guardado exitosamente."); // Muestra el popup de éxito
       setTimeout(() => navigate("/home"), 2000); // Redirige a la página de inicio después de 2 segundos
+
       sessionStorage.removeItem("projectData");
+      
+      // Mostrar mensaje de éxito y luego navegar
+      setSuccessMessage("Proyecto guardado exitosamente. Redirigiendo...");
+      
+      // Redirigir después de 2 segundos (para que el usuario vea el mensaje)
+      setTimeout(() => {
+        navigate(`/project/${projectId}`);
+      }, 2000);
+
     } catch (error) {
       console.error("Error al guardar el proyecto:", error);
-      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo."); // Muestra el popup de error
+      setError("Error al guardar el proyecto. Por favor, inténtalo de nuevo.");
     }
   };
 
@@ -517,9 +552,9 @@ function RevisionIA() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="loading-spinner">
-          <div></div>
-          <p>Cargando proyecto...</p>
+        <div className="loading-popup">
+          <div className="spinner"></div>
+          <p className="loading-text">Cargando proyecto...</p>
         </div>
       </div>
     );
@@ -594,21 +629,30 @@ function RevisionIA() {
           </>
         )}
         <div className="center-button-container">
-          <button
-            className="edit-project-button"
-            onClick={
-              editingProject
-                ? handleSaveProjectChanges
-                : () => setEditingProject(true)
-            }
-            disabled={saveStatus.loading}
-          >
-            {editingProject
-              ? saveStatus.loading
-                ? "Guardando..."
-                : "Guardar Cambios"
-              : "Editar Proyecto"}
-          </button>
+          {editingProject ? (
+            <>
+              <button
+                className="edit-project-button cancel"
+                onClick={handleCancelProjectEdit}
+              >
+                Cancelar
+              </button>
+              <button
+                className="edit-project-button"
+                onClick={handleSaveProjectChanges}
+                disabled={saveStatus.loading}
+              >
+                {saveStatus.loading ? "Guardando..." : "Guardar Cambios"}
+              </button>
+            </>
+          ) : (
+            <button
+              className="edit-project-button"
+              onClick={() => setEditingProject(true)}
+            >
+              Editar Proyecto
+            </button>
+          )}
         </div>
         {saveStatus.success && (
           <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
@@ -626,10 +670,7 @@ function RevisionIA() {
               className={`tab ${activeTab === tab.id ? "active" : ""} ${
                 expandedTab === tab.id ? "expanded" : ""
               }`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                toggleExpand(tab.id);
-              }}
+              onClick={() => handleTabClick(tab.id)} // Usar la nueva función
             >
               <span className="tab-title">{tab.title}</span>
               {expandedTab === tab.id && (

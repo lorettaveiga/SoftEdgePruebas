@@ -105,6 +105,10 @@ export const exchangeWhoopToken = async (req, res) => {
   const { code } = req.body;
   try {
     console.log("Exchanging WHOOP authorization code for tokens");
+    const redirectUri = process.env.NODE_ENV === 'production'
+      ? 'https://soft-edge-two.vercel.app/whoop-callback'
+      : 'http://localhost:5173/whoop-callback';
+
     const response = await axios.post(
       "https://api.prod.whoop.com/oauth/oauth2/token",
       qs.stringify({
@@ -113,8 +117,8 @@ export const exchangeWhoopToken = async (req, res) => {
           "a315fb94189d174a4ef205b479199c28e496d9fa575bed088d70911f0de0fb35",
         grant_type: "authorization_code",
         code,
-
-        redirect_uri: `${FRONT_URL}/whoop-callback`,
+        redirect_uri: redirectUri,
+        scope: "read:sleep read:recovery read:cycles read:workout read:profile read:body_measurement"
       }),
       {
         headers: {

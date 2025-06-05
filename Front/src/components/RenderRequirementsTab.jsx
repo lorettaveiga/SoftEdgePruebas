@@ -169,6 +169,9 @@ const RenderRequirementsTab = ({ ...props }) => {
     if (!taskFormData.assignee) {
       missingFields.push("asignación a un miembro");
     }
+    if (!taskFormData.sprint) {
+      missingFields.push("sprint");
+    }
 
     if (missingFields.length > 0) {
       if (missingFields.length === 1) {
@@ -188,6 +191,7 @@ const RenderRequirementsTab = ({ ...props }) => {
       description: taskFormData.description,
       priority: taskFormData.priority,
       assignee: taskFormData.assignee,
+      sprint: taskFormData.sprint || "N/A",
     };
 
     const currentTasks = tasks[selectedItem.id] || [];
@@ -208,6 +212,7 @@ const RenderRequirementsTab = ({ ...props }) => {
         asignados:
           teamMembers.find((m) => m.email === task.assignee)?.id || null,
         estado: "En progreso",
+        sprint: task.sprint === "N/A" ? null : Number(task.sprint),
       })),
     };
 
@@ -229,6 +234,7 @@ const RenderRequirementsTab = ({ ...props }) => {
       description: "",
       priority: "",
       assignee: "",
+      sprint: "",
     });
   };
 
@@ -287,17 +293,6 @@ const RenderRequirementsTab = ({ ...props }) => {
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditing(true);
-                }}
-                style={{
-                  position: "absolute",
-                  left: "20px",
-                  top: "20px",
-                  backgroundColor: "#f0e6ff",
-                  color: "#5d3a7f",
-                  border: "none",
-                  borderRadius: "4px",
-                  padding: "8px 12px",
-                  cursor: "pointer",
                 }}
               >
                 Editar
@@ -830,6 +825,25 @@ const RenderRequirementsTab = ({ ...props }) => {
                       ))}
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label>Sprint:</label>
+                    <select
+                      value={taskFormData.sprint}
+                      onChange={(e) =>
+                        setTaskFormData({
+                          ...taskFormData,
+                          sprint: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">N/A</option>
+                      {Array.from({ length: project?.sprintNumber || 3 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          Sprint {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="task-form-actions">
                     <button
                       className="popup-button secondary"
@@ -840,6 +854,7 @@ const RenderRequirementsTab = ({ ...props }) => {
                           description: "",
                           priority: "",
                           assignee: "",
+                          sprint: "",
                         });
                         setError("");
                       }}

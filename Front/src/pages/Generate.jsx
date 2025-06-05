@@ -6,6 +6,7 @@ import ErrorPopup from "../components/ErrorPopup";
 import SuccessPopup from "../components/SuccessPopup";
 import ConfirmationPopup from "../components/ConfirmationPopup";
 import "../css/Generate.css";
+import '../css/Spinner.css';
 
 function Generate() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -16,6 +17,8 @@ function Generate() {
   const [tasksPerStory, setTasksPerStory] = useState(3);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentQuote, setCurrentQuote] = useState(0);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [sprints, setSprints] = useState(1);
@@ -26,6 +29,19 @@ function Generate() {
   const [deleteAction, setDeleteAction] = useState("");
 
   const userId = localStorage.getItem("userId");
+
+  const loadingPhrases = [
+    "Analizando tu descripción...",
+    "Procesando requerimientos...",
+    "Generando estructura del proyecto...",
+    "Creando épicas...",
+    "Desarrollando historias de usuario...",
+    "Asignando tareas a los sprints...",
+    "Optimizando la distribución...",
+    "Validando la estructura...",
+    "Revisando consistencia...",
+    "Finalizando la generación..."
+  ];
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -122,7 +138,60 @@ function Generate() {
       return;
     }
     setLoading(true);
+    setProgress(0);
+    setCurrentQuote(0);
+
+    let progressInterval = null;
+    let quoteInterval = null;
+    let finalizingInterval = null;
+    let isFinished = false;
+
     try {
+      // Start cycling through quotes every 1.5s
+      quoteInterval = setInterval(() => {
+        setCurrentQuote(prev => {
+          // If about to reach the last phrase, stop cycling
+          if (prev + 1 === loadingPhrases.length - 1) {
+            clearInterval(quoteInterval);
+          }
+          return (prev + 1) % loadingPhrases.length;
+        });
+      }, 1500);
+
+      // Animate progress bar from 0 to 90% over estimated time
+      const estimatedTotalTime = 15000; // 15 seconds
+      const startTime = Date.now();
+      progressInterval = setInterval(() => {
+        if (isFinished) return;
+        // If we're on the last phrase, stop this interval
+        if (currentQuote === loadingPhrases.length - 1) {
+          clearInterval(progressInterval);
+          // Start slow finalizing progress
+          finalizingInterval = setInterval(() => {
+            setProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(finalizingInterval);
+                setProgress(100);
+                // Wait 2 seconds at 100% before navigating
+                setTimeout(() => {
+                  setLoading(false);
+                  setProgress(0);
+                  setCurrentQuote(0);
+                  navigate("/revisionIA", { state: { generatedText: cleanJSON, showSuccess: true } });
+                }, 2000);
+                return 100;
+              }
+              return prev + 1; // 1% every 20ms for 2s
+            });
+          }, 20);
+          return;
+        }
+        const elapsed = Date.now() - startTime;
+        let percent = Math.min((elapsed / estimatedTotalTime) * 90, 90);
+        setProgress(percent);
+      }, 100);
+
+      // Start the API request
       const response = await fetch(`${BACKEND_URL}/generateEpic`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,12 +205,33 @@ function Generate() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Wait for the response
+      const { data } = await response.json();
+      isFinished = true;
+      clearInterval(progressInterval);
+      clearInterval(quoteInterval);
+      // If not already on the last phrase, set it and start finalizing progress
+      if (currentQuote !== loadingPhrases.length - 1) {
+        setCurrentQuote(loadingPhrases.length - 1);
+        finalizingInterval = setInterval(() => {
+          setProgress(prev => {
+            if (prev >= 100) {
+              clearInterval(finalizingInterval);
+              setProgress(100);
+              setTimeout(() => {
+                setLoading(false);
+                setProgress(0);
+                setCurrentQuote(0);
+                navigate("/revisionIA", { state: { generatedText: cleanJSON, showSuccess: true } });
+              }, 2000);
+              return 100;
+            }
+            return prev + 1;
+          });
+        }, 20);
       }
 
-      const { data } = await response.json();
-
+      // Prepare cleanJSON before animation
       const cleanJSON = data
         .replace(/```json|```/g, "")
         .replace(/'/g, '"')
@@ -149,13 +239,14 @@ function Generate() {
 
       JSON.parse(cleanJSON); // Validar que sea JSON válido
       addToHistory(prompt);
-      setSuccessMessage("Proyecto generado exitosamente");
-      navigate("/revisionIA", { state: { generatedText: cleanJSON } });
     } catch (error) {
+      clearInterval(progressInterval);
+      clearInterval(quoteInterval);
       setError("Error al generar el proyecto. Por favor, intenta de nuevo.");
-      console.error("Error:", error);
-    } finally {
       setLoading(false);
+      setProgress(0);
+      setCurrentQuote(0);
+      console.error("Error:", error);
     }
   };
 
@@ -458,6 +549,23 @@ function Generate() {
         cancelText="Cancelar"
         loading={loading}
       />
+
+      {loading && (
+        <div className="loading-popup">
+          <p className="loading-text">{loadingPhrases[currentQuote]}</p>
+          <div className="progress-container">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ 
+                  width: `${progress}%`,
+                  transition: 'width 0.3s ease-in-out'
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

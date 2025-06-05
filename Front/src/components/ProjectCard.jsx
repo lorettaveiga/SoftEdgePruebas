@@ -2,22 +2,37 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/ProjectCard.css";
 
-const ProjectCard = ({ project, initialBackgroundColor = "#7a5a96" }) => {
+const ProjectCard = ({ project, BACKEND_URL }) => {
   const navigate = useNavigate();
-  const [backgroundColor, setBackgroundColor] = useState(initialBackgroundColor);
+  const [backgroundColor, setBackgroundColor] = useState(project.color || "#7a5a96");
   const [showColorOptions, setShowColorOptions] = useState(false);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false); // Estado para controlar la descripción
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
-  const handleColorChange = (color) => {
-    setBackgroundColor(color); // Actualiza el color de fondo
-    setShowColorOptions(false); // Cierra las opciones de color
+  const handleColorChange = async (color) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/projectsFB/${project.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ color }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update project color");
+
+      setBackgroundColor(color); // Update the local state
+      setShowColorOptions(false); // Close the color options
+    } catch (error) {
+      console.error("Error updating project color:", error);
+    }
   };
 
   return (
     <div
       className="project-card"
-      onClick={() => navigate(`/project/${project.id}`)} // Redirige al proyecto al hacer clic
-      style={{ cursor: "pointer" }} // Cambia el cursor para indicar que es clicable
+      onClick={() => navigate(`/project/${project.id}`)}
+      style={{ cursor: "pointer" }}
     >
       {/* Barra de color en la parte superior */}
       <div

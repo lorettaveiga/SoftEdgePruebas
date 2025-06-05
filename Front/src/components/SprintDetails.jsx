@@ -7,13 +7,8 @@ const SprintDetails = ({
   onClose,
   setAllTasks,
   projectId,
-  fetchAllTasks,
+  refreshSprintsData,
 }) => {
-  console.log("Props recibidas en SprintDetails:", {
-    sprint,
-    sprintTasks,
-    projectId,
-  });
   const [draggedTask, setDraggedTask] = useState(null);
 
   // Manejar el inicio del arrastre de una tarea
@@ -74,6 +69,8 @@ const SprintDetails = ({
             task.id === draggedTask.id ? { ...task, estado: newStatus } : task
           )
         );
+
+        await refreshSprintsData(); // Refrescar los datos del sprint
 
         console.log("Tarea actualizada correctamente en el frontend");
       } catch (error) {

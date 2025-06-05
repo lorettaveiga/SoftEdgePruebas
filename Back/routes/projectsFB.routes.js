@@ -18,6 +18,9 @@ import {
   getAllTasks,
   getTasks,
   getProjectAndTitle,
+  addProjectHistory, 
+  updateSprintNumber,
+
 } from "../controllers/projectsFB.controllers.js";
 
 const router = Router();
@@ -26,6 +29,12 @@ const upload = multer({ storage: multer.memoryStorage() }); // Configuración de
 router.get("/projectsFB/", verifyToken, getProjects);
 router.get("/projectsFB/:id", verifyToken, getProject);
 router.post("/projectsFB/", verifyToken, postProject);
+router.put(
+  "/projectsFB/:id/updateSprintNumber",
+  verifyToken,
+  updateSprintNumber
+);
+
 router.put("/projectsFB/:id", verifyToken, putProject);
 router.delete("/projectsFB/:id", verifyToken, deleteProject);
 router.put("/projectsFB/updateRequirements", verifyToken, updateRequirements); // Ruta para actualizar requerimientos
@@ -48,5 +57,6 @@ router.post("/projectsFB/:id/tasks", verifyToken, updateTasks);
 router.put("/projectsFB/:id/tasks", verifyToken, updateTaskStatus);
 
 router.get("/projectsFB/:id/projectAndTitle", verifyToken, getProjectAndTitle); // Ruta para obtener el proyecto y titulo de usuario
+router.post("/projectsFB/:projectId/history", verifyToken, addProjectHistory); // Ruta para agregar historial de modificaciones
 
 export default router;

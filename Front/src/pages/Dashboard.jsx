@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { UserContext } from "../components/UserContext";
-import ErrorPopup from "../components/ErrorPopup"; // Importamos el popup de error
-import SuccessPopup from "../components/SuccessPopup"; // Importamos el popup de éxito
+import ErrorPopup from "../components/ErrorPopup";
+import SuccessPopup from "../components/SuccessPopup";
 import TopAppBar from "../components/TopAppBar";
 import EditMemberPopup from "../components/EditMemeberPopup";
 import RenderRequirementsTab from "../components/RenderRequirementsTab";
 import TeamEditPopup from "../components/TeamEditPopup";
 import ModificationHistory from "../components/ModificationHistory";
 import SprintDetails from "../components/SprintDetails";
+import TaskReassignmentPopup from "../components/TaskReassignmentPopup";
 import "../css/Dashboard.css";
 import ProjectMetrics from "../components/ProjectMetrics";
+import "../css/Spinner.css";
 
 const Dashboard = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -26,9 +28,9 @@ const Dashboard = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [showTeamPopup, setShowTeamPopup] = useState(false);
-  const [allTasks, setAllTasks] = useState([]); // Todas las tareas del proyecto
-  const [error, setError] = useState(null); // Estado para manejar el mensaje de error
-  const [successMessage, setSuccessMessage] = useState(null); // Estado para manejar el mensaje de éxito
+  const [allTasks, setAllTasks] = useState([]);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [editing, setEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState({
@@ -36,8 +38,9 @@ const Dashboard = () => {
     error: null,
     success: false,
   });
-  const [sprints, setSprints] = useState([]);
-  const [sprintDuration, setSprintDuration] = useState(2); // Default 2 weeks
+
+  const [sprintDuration, setSprintDuration] = useState(2);
+  const [deletingSprint, setDeletingSprint] = useState(false);
 
   // Función para generar sprints dinámicamente
   const generateSprints = (
@@ -90,13 +93,64 @@ const Dashboard = () => {
     return sprints;
   };
 
-  const [tasks, setTasks] = useState([]); // Todas las tareas del proyecto
-  const [selectedSprint, setSelectedSprint] = useState(null);
+  // Sprint backlog states
+  const [sprints, setSprints] = useState([
+    {
+      number: 1,
+      status: "En progreso",
+      startDate: "2024-04-01",
+      endDate: "2024-04-14",
+      tasks: [
+        {
+          title: "Implementar autenticación",
+          description: "Crear sistema de login y registro",
+          status: "En progreso",
+        },
+        {
+          title: "Diseñar interfaz de usuario",
+          description: "Crear wireframes y mockups",
+          status: "Completado",
+        },
+      ],
+    },
+    {
+      number: 2,
+      status: "Planificado",
+      startDate: "2024-04-15",
+      endDate: "2024-04-28",
+      tasks: [
+        {
+          title: "Desarrollar API",
+          description: "Implementar endpoints principales",
+          status: "Pendiente",
+        },
+        {
+          title: "Configurar base de datos",
+          description: "Crear esquema y migraciones",
+          status: "Pendiente",
+        },
+      ],
+    },
+    {
+      number: 3,
+      status: "Pendiente",
+      startDate: "2024-04-29",
+      endDate: "2024-05-12",
+      tasks: [
+        {
+          title: "Pruebas de integración",
+          description: "Realizar pruebas de sistema completo",
+          status: "Pendiente",
+        },
+      ],
+    },
+  ]);
+  const [tasks, setTasks] = useState([]);
 
+  const [selectedSprint, setSelectedSprint] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [availableMembers, setAvailableMembers] = useState([]);
   const [countdown, setCountdown] = useState(3);
-
   const [editData, setEditData] = useState({
     title: "",
     description: "",
@@ -107,7 +161,6 @@ const Dashboard = () => {
     title: "",
     description: "",
   });
-
   const [showMemberMenu, setShowMemberMenu] = useState(null);
   const [editingMember, setEditingMember] = useState(null);
   const [memberAction, setMemberAction] = useState(null);
@@ -118,21 +171,23 @@ const Dashboard = () => {
     priority: "",
     assignee: "",
   });
-
-  // Agregar estos nuevos estados para el manejo de la eliminación de tareas
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
-  // Agregar estos estados para manejar el modo de eliminación
   const [deleteMode, setDeleteMode] = useState(false);
   const [taskToSelect, setTaskToSelect] = useState(null);
-
   const [showProjectDeleteConfirmation, setShowProjectDeleteConfirmation] =
     useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
+  const [showDeleteSprintConfirmation, setShowDeleteSprintConfirmation] =
+    useState(false);
+  const [showTaskReassignmentPopup, setShowTaskReassignmentPopup] =
+    useState(false);
+  const [tasksToReassign, setTasksToReassign] = useState([]);
+  const [sprintToDeleteDashboard, setSprintToDeleteDashboard] = useState(null);
 
   // Estado para manejar el número máximo de tareas
   const [nextTaskNumber, setNextTaskNumber] = useState(0);
+  const [draggedTask, setDraggedTask] = useState(null);
 
   useEffect(() => {
     // Verificar que el usuario sea visitante
@@ -141,14 +196,13 @@ const Dashboard = () => {
     }
   }, []);
 
-  // UseEffect para cargar el proyecto y los miembros del equipo
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       await fetchProject();
-      const projectMembers = await fetchTeamMembers(); // Llamar primero para filtrar usuarios
+      const projectMembers = await fetchTeamMembers();
       await fetchAvailableUsers(projectMembers);
-      await fetchAllTasks(); // Llamar para obtener todas las tareas
+      await fetchAllTasks();
       setLoading(false);
     };
 
@@ -160,13 +214,12 @@ const Dashboard = () => {
     if (successMessage) {
       const timer = setTimeout(() => {
         setSuccessMessage(null);
-      }, 3000); // 3 segundos
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
 
-  // UseEffect para manejar el temporizador de cuenta regresiva
   useEffect(() => {
     if (showProjectDeleteConfirmation) {
       let timer = setInterval(() => {
@@ -280,7 +333,7 @@ const Dashboard = () => {
         if (!response.ok) throw new Error("Error al cargar las tareas");
 
         const { tasks: dbTasks } = await response.json();
-        setTasks(dbTasks); // Guardar todas las tareas en el estado
+        setTasks(dbTasks);
       } catch (error) {
         console.error("Error al cargar las tareas:", error);
         setError("No se pudieron cargar las tareas del proyecto.");
@@ -327,7 +380,6 @@ const Dashboard = () => {
           }`.toUpperCase(),
         }));
 
-        // Filtrar los usuarios que ya son miembros del equipo
         const filteredUsers = mappedUsers.filter(
           (user) => !projectMembers.some((member) => member.id === user.id)
         );
@@ -374,7 +426,7 @@ const Dashboard = () => {
         }));
 
         setTeamMembers(mappedTeamMembers);
-        return mappedTeamMembers; // Devolver los miembros del equipo para filtrar usuarios
+        return mappedTeamMembers;
       } else {
         console.error("Error fetching team members:", data.message);
       }
@@ -400,15 +452,24 @@ const Dashboard = () => {
       if (!resp.ok) throw new Error("Failed to fetch all tasks");
 
       const { tasks: dbTasks } = await resp.json();
-
-      // Guardar las tareas en el estado local
       setAllTasks(dbTasks);
       console.log("Tareas obtenidas:", dbTasks);
 
-      // Calcular el siguiente número de tarea
       const nextTaskNumber = dbTasks.length;
       setNextTaskNumber(nextTaskNumber);
-      console.log(nextTaskNumber);
+
+      // Regenerar los sprints para metricas
+      if (project) {
+        const sprintNumber = project.sprintNumber || 3;
+        const duration = project.sprintDuration || 2;
+        const regeneratedSprints = generateSprints(
+          sprintNumber,
+          dbTasks,
+          duration,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
     } catch (error) {
       console.error("Error fetching all tasks:", error);
     }
@@ -433,12 +494,12 @@ const Dashboard = () => {
       }));
       setIsEditing(false);
       console.log("Project updated successfully");
-      setSuccessMessage("Proyecto actualizado exitosamente."); // Muestra el popup de éxito
+      setSuccessMessage("Proyecto actualizado exitosamente.");
     } catch (error) {
       console.error("Error updating project:", error);
       setError(
         "Error al actualizar el proyecto. Por favor, inténtalo de nuevo."
-      ); // Muestra el popup de error
+      );
     }
   };
 
@@ -474,7 +535,7 @@ const Dashboard = () => {
         }),
       });
 
-      const responseData = await response.json(); // Asegurarse de parsear la respuesta
+      const responseData = await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -485,7 +546,7 @@ const Dashboard = () => {
       setProject(updatedProject);
       setSaveStatus({ loading: false, error: null, success: true });
       setSuccessMessage("Cambios guardados exitosamente");
-      setShowPopup(false);
+      handleClosePopup(); // Asegurarse de cerrar el popup después de guardar
     } catch (error) {
       console.error("Error al guardar:", error);
       setSaveStatus({
@@ -500,7 +561,6 @@ const Dashboard = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Checar si estamos editando un requerimiento o el proyecto
     if (editing) {
       setRequirementEditData((prev) => ({
         ...prev,
@@ -515,11 +575,11 @@ const Dashboard = () => {
   };
 
   const closeErrorPopup = () => {
-    setError(null); // Cierra el popup de error
+    setError(null);
   };
 
   const closeSuccessPopup = () => {
-    setSuccessMessage(null); // Cierra el popup de éxito
+    setSuccessMessage(null);
   };
 
   const handleItemClick = async (item) => {
@@ -530,7 +590,6 @@ const Dashboard = () => {
     });
     setShowPopup(true);
 
-    // Fetch tasks for this element
     try {
       const resp = await fetch(
         `${BACKEND_URL}/projectsFB/${projectId}/tasks?requirementType=${activeRequirement}&elementId=${item.id}`,
@@ -544,7 +603,6 @@ const Dashboard = () => {
       );
       if (!resp.ok) throw new Error("Failed to fetch tasks");
       const { tasks: dbTasks } = await resp.json();
-      // Mapear al formato de front con prefijo 'T' y padding de 2 dígitos
       const mapped = dbTasks.map((t) => {
         const rawId = t.id.toString();
         const num = rawId.startsWith("T") ? rawId.slice(1) : rawId;
@@ -583,58 +641,146 @@ const Dashboard = () => {
     });
   };
 
-  const handleSaveTeam = async (addedMembers, removedMembers) => {
+  const handleSaveTeam = async (addedMembers, removedMembers, currentUser) => {
     try {
-      // 1) Vincular los nuevos
-      await Promise.all(
-        addedMembers.map((m) =>
+      // Ensure user information is complete
+      const user = currentUser || {
+        userId: userId || localStorage.getItem("userId"),
+        name: localStorage.getItem("username"),
+        lastname: localStorage.getItem("lastname"),
+      };
+
+      // Log user data for debugging
+      console.log("Current User (from handleSaveTeam):", user);
+      console.log("Added Members:", addedMembers);
+      console.log("Removed Members:", removedMembers);
+
+      if (!user.userId || !user.name || !user.lastname) {
+        console.error(
+          "Información del usuario actual incompleta o no definida."
+        );
+        console.error("Datos faltantes:", {
+          userId: user.userId,
+          name: user.name,
+          lastname: user.lastname,
+        });
+        setError("Error: Información del usuario actual incompleta.");
+        return;
+      }
+
+      await Promise.all([
+        ...addedMembers.map((member) =>
           fetch(`${BACKEND_URL}/projectsFB/linkUserToProject`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify({ userId: m.id, projectId }),
+            body: JSON.stringify({ userId: member.id, projectId }),
           })
-        )
-      );
-
-      // 2) Desvincular los eliminados
-      await Promise.all(
-        removedMembers.map((m) =>
+        ),
+        ...removedMembers.map((member) =>
           fetch(`${BACKEND_URL}/projectsFB/unlinkUserFromProject`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-            body: JSON.stringify({ userId: m.id, projectId }),
+            body: JSON.stringify({ userId: member.id, projectId }),
           })
-        )
-      );
-
-      // 3) Actualizar estado local
-      setTeamMembers((prev) => [
-        // quitamos los eliminados
-        ...prev.filter(
-          (tm) => !removedMembers.find((rm) => rm.email === tm.email)
         ),
-        // añadimos los nuevos
+      ]);
+
+      await Promise.all([
+        ...addedMembers.map((member) => {
+          const url = `${BACKEND_URL}/projectsFB/${projectId}/history`;
+          console.log("POST URL for MEMBER_ADDED:", url);
+          console.log("Payload for MEMBER_ADDED:", {
+            action: "MEMBER_ADDED",
+            userId: user.userId,
+            userName: user.name,
+            userLastname: user.lastname,
+            targetUserId: member.id,
+            details: `Se agregó a ${member.name} ${member.lastname || ""} (${
+              member.email
+            }) al equipo del proyecto`,
+            timestamp: new Date().toISOString(),
+          });
+
+          return fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              action: "MEMBER_ADDED",
+              userId: user.userId,
+              userName: user.name,
+              userLastname: user.lastname,
+              targetUserId: member.id,
+              details: `Se agregó a ${member.name} ${member.lastname || ""} (${
+                member.email
+              }) al equipo del proyecto`,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch((err) => {
+            console.error("Error in MEMBER_ADDED request:", err);
+          });
+        }),
+        ...removedMembers.map((member) => {
+          const url = `${BACKEND_URL}/projectsFB/${projectId}/history`;
+          console.log("POST URL for MEMBER_REMOVED:", url);
+          console.log("Payload for MEMBER_REMOVED:", {
+            action: "MEMBER_REMOVED",
+            userId: user.userId,
+            userName: user.name,
+            userLastname: user.lastname,
+            targetUserId: member.id,
+            details: `Se removió a ${member.name} ${member.lastname || ""} (${
+              member.email
+            }) del equipo del proyecto`,
+            timestamp: new Date().toISOString(),
+          });
+
+          return fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              action: "MEMBER_REMOVED",
+              userId: user.userId,
+              userName: user.name,
+              userLastname: user.lastname,
+              targetUserId: member.id,
+              details: `Se removió a ${member.name} ${member.lastname || ""} (${
+                member.email
+              }) del equipo del proyecto`,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch((err) => {
+            console.error("Error in MEMBER_REMOVED request:", err);
+          });
+        }),
+      ]);
+
+      setTeamMembers((prev) => [
+        ...prev.filter(
+          (tm) => !removedMembers.some((rm) => rm.email === tm.email)
+        ),
         ...addedMembers,
       ]);
-
       setAvailableMembers((prev) => [
-        // recuperamos a los eliminados
+        ...prev.filter((am) => !addedMembers.some((m) => m.email === am.email)),
         ...removedMembers,
-        // quitamos a los recién añadidos
-        ...prev.filter((am) => !addedMembers.find((m) => m.email === am.email)),
       ]);
-
       setShowTeamPopup(false);
-      setSuccessMessage("Equipo actualizado correctamente.");
+      setSuccessMessage("Equipo actualizado correctamente");
     } catch (err) {
-      console.error(err);
-      setError("No se pudieron guardar los cambios de equipo.");
+      console.error("Error en handleSaveTeam:", err);
+      setError("No se pudieron guardar los cambios de equipo");
     }
   };
 
@@ -656,7 +802,6 @@ const Dashboard = () => {
 
   const handleRemoveMember = async (member) => {
     try {
-      // Hacer la llamada a la API para desvincular el usuario del proyecto
       await fetch(`${BACKEND_URL}/projectsFB/unlinkUserFromProject`, {
         method: "POST",
         headers: {
@@ -669,7 +814,6 @@ const Dashboard = () => {
         }),
       });
 
-      // Actualizar el estado de los miembros del equipo y los miembros disponibles
       setTeamMembers((prev) =>
         prev.filter((teamMember) => teamMember.email !== member.email)
       );
@@ -719,20 +863,30 @@ const Dashboard = () => {
     });
     setEditing(false);
     setDeleteMode(false);
+    setRequirementEditData({
+      title: "",
+      description: "",
+    });
+    setSaveStatus({
+      loading: false,
+      error: null,
+      success: false,
+    });
+    setIsEditing(false);
   };
 
-  // Agregar un manejador de eventos para el drag and drop
   const handleDragStart = (e, taskId, index) => {
     e.dataTransfer.setData("taskId", taskId);
     e.dataTransfer.setData("index", index);
     e.currentTarget.classList.add("dragging");
+    setDraggedTask({ id: taskId, index });
   };
 
   const handleDragEnd = (e) => {
-    // Eliminar la clase dragging de todos los elementos
     document.querySelectorAll(".dragging").forEach((element) => {
       element.classList.remove("dragging");
     });
+    setDraggedTask(null);
   };
 
   const handleDragOver = (e) => {
@@ -774,7 +928,7 @@ const Dashboard = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // Incluye el token aquí
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               taskId: draggedTask.id,
@@ -800,9 +954,7 @@ const Dashboard = () => {
     }
   };
 
-  // Modificar la función handleDeleteTask para desactivar el modo eliminación
   const handleDeleteTask = async (taskId, elementId) => {
-    // 1. Actualizar estado local
     const updatedTasksArr = (tasks[elementId] || []).filter(
       (task) => task.id !== taskId
     );
@@ -815,7 +967,6 @@ const Dashboard = () => {
     setTaskToDelete(null);
     setDeleteMode(false);
 
-    // 2. Persistir eliminación en la base de datos
     try {
       const payload = {
         requirementType: activeRequirement,
@@ -879,39 +1030,55 @@ const Dashboard = () => {
     <div>
       <div className="sprints-grid">
         {sprints.length > 0 ? (
-          sprints.map((sprint, index) => (
-            <div
-              key={index}
-              className="sprint-card"
-              onClick={() => handleSprintClick(sprint)}
-            >
-              <h3 className="sprint-title">SPRINT {sprint.number}</h3>
-              <div className="sprint-status-container">
-                <span
-                  className={`status-badge ${sprint.status
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}
-                >
-                  {sprint.status}
-                </span>
-              </div>
-              <div className="sprint-dates">
-                <div className="date-item">
-                  <span className="calendar-icon">📅</span>
-                  <span className="date-text">
-                    {formatDateWithoutTimezone(sprint.startDate)}
+          <>
+            {sprints.map((sprint, index) => (
+              <div
+                key={index}
+                className="sprint-card"
+                onClick={() => handleSprintClick(sprint)}
+              >
+                <h3 className="sprint-title">SPRINT {sprint.number}</h3>
+                <div className="sprint-status-container">
+                  <span
+                    className={`status-badge ${sprint.status
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
+                    {sprint.status}
                   </span>
                 </div>
-                <div className="date-separator">→</div>
-                <div className="date-item">
-                  <span className="calendar-icon">📅</span>
-                  <span className="date-text">
-                    {formatDateWithoutTimezone(sprint.endDate)}
-                  </span>
+                <div className="sprint-dates">
+                  <div className="date-item">
+                    <span className="calendar-icon">📅</span>
+                    <span className="date-text">
+                      {formatDateWithoutTimezone(sprint.startDate)}
+                    </span>
+                  </div>
+                  <div className="date-separator">→</div>
+                  <div className="date-item">
+                    <span className="calendar-icon">📅</span>
+                    <span className="date-text">
+                      {formatDateWithoutTimezone(sprint.endDate)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            {role === "admin" && (
+              <div
+                className="sprint-card add-sprint-card"
+                onClick={handleAddSprint}
+              >
+                <div className="add-sprint-content">
+                  <div className="add-sprint-icon">+</div>
+                  <h3 className="add-sprint-title">Agregar Sprint</h3>
+                  <p className="add-sprint-description">
+                    Haz clic para añadir un nuevo sprint al proyecto
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="no-sprints">
             <p>No hay sprints disponibles</p>
@@ -919,7 +1086,6 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Sprint Configuration Section - Only for Admins */}
       {role === "admin" && (
         <div className="sprint-configuration-section">
           <h3>Configuración de Sprints</h3>
@@ -940,6 +1106,21 @@ const Dashboard = () => {
                 <option value={4}>4 semanas</option>
               </select>
             </div>
+            <div className="config-option">
+              <label>Eliminar último Sprint:</label>
+              <button
+                className="delete-sprint-button"
+                onClick={() => setShowDeleteSprintConfirmation(true)}
+                disabled={(project.sprintNumber || 3) <= 1}
+                title={
+                  (project.sprintNumber || 3) <= 1
+                    ? "No se puede eliminar el único sprint"
+                    : "Eliminar el último sprint"
+                }
+              >
+                Eliminar Sprint
+              </button>
+            </div>
             <div className="config-info">
               <p>
                 <strong>Información:</strong> Cambiar la duración afectará las
@@ -951,6 +1132,9 @@ const Dashboard = () => {
                   {formatDateWithoutTimezone(project.fechaCreacion)}
                 </p>
               )}
+              <p>
+                <strong>Sprints actuales:</strong> {project.sprintNumber || 3}
+              </p>
             </div>
           </div>
         </div>
@@ -991,7 +1175,7 @@ const Dashboard = () => {
       saveStatus={saveStatus}
       setSaveStatus={setSaveStatus}
       requirementEditData={requirementEditData}
-      setEditData={setEditData}
+      setRequirementEditData={setRequirementEditData}
       handleSaveEdit={handleSaveEdit}
       handleInputChange={handleInputChange}
       nextTaskNumber={nextTaskNumber}
@@ -1004,7 +1188,6 @@ const Dashboard = () => {
     <ProjectMetrics tasks={allTasks} sprints={sprints} />
   );
 
-  // Add function to refresh sprints when duration changes
   const refreshSprintsAfterDurationChange = async (newDuration) => {
     try {
       const tasksResponse = await fetch(
@@ -1037,10 +1220,8 @@ const Dashboard = () => {
     }
   };
 
-  // Función para actualizar la duración de los sprints
   const handleSprintDurationChange = async (newDuration) => {
     try {
-      // Only send the fields that need to be updated
       const updateData = {
         nombreProyecto: project.nombreProyecto,
         descripcion: project.descripcion,
@@ -1065,28 +1246,23 @@ const Dashboard = () => {
       });
 
       if (!response.ok) {
-        // Try to parse JSON, but handle cases where it might not be JSON
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch (jsonError) {
-          // If response is not JSON, use the response text
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
         }
         throw new Error(errorMessage);
       }
 
-      // Update local state
       const updatedProject = { ...project, sprintDuration: newDuration };
       setProject(updatedProject);
       setSprintDuration(newDuration);
 
-      // Regenerar sprints con nueva duración
       const sprintNumber = project.sprintNumber || 3;
 
-      // Fetch tasks again to ensure we have current data
       try {
         const tasksResponse = await fetch(
           `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
@@ -1125,11 +1301,82 @@ const Dashboard = () => {
 
       setSuccessMessage("Duración de sprints actualizada exitosamente.");
 
-      // Refresh sprints after successful update
       await refreshSprintsAfterDurationChange(newDuration);
     } catch (error) {
       console.error("Error updating sprint duration:", error);
       setError(`Error al actualizar la duración de los sprints`);
+    }
+  };
+
+  const handleAddSprint = async () => {
+    try {
+      const newSprintNumber = (project.sprintNumber || 3) + 1;
+
+      const updateData = {
+        sprintNumber: newSprintNumber,
+      };
+
+      const response = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/updateSprintNumber`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update project with new sprint count");
+      }
+
+      const updatedProject = { ...project, sprintNumber: newSprintNumber };
+      setProject(updatedProject);
+
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          allTasks,
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          [],
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Sprint agregado exitosamente.");
+    } catch (error) {
+      console.error("Error adding new sprint:", error);
+      setError(
+        "Error al agregar el nuevo sprint. Por favor, inténtalo de nuevo."
+      );
     }
   };
 
@@ -1163,6 +1410,270 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteLastSprint = async () => {
+    try {
+      const currentSprintCount = project.sprintNumber || 3;
+
+      if (currentSprintCount <= 1) {
+        setError(
+          "No se puede eliminar el sprint. Debe haber al menos un sprint en el proyecto."
+        );
+        return;
+      }
+
+      setShowDeleteSprintConfirmation(false);
+
+      const tasksResponse = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      let allTasks = [];
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        allTasks = tasksData.tasks || [];
+      }
+
+      const tasksInLastSprint = allTasks.filter(
+        (task) => parseInt(task.sprint, 10) === currentSprintCount
+      );
+
+      setTasksToReassign(tasksInLastSprint);
+      setSprintToDeleteDashboard(currentSprintCount);
+
+      const availableSprints = sprints.filter(
+        (sprint) => sprint.number !== currentSprintCount
+      );
+
+      if (tasksInLastSprint.length > 0 && availableSprints.length > 0) {
+        setShowTaskReassignmentPopup(true);
+      } else {
+        setDeletingSprint(true);
+        await performSprintDeletion(currentSprintCount, {});
+      }
+    } catch (error) {
+      console.error("Error preparing sprint deletion:", error);
+      setError("Error al preparar la eliminación del sprint.");
+    }
+  };
+
+  const performSprintDeletion = async (sprintNumber, taskAssignments) => {
+    try {
+      setDeletingSprint(true); // Show spinner
+      console.log("Spinner");
+      const newSprintNumber = sprintNumber - 1;
+
+      if (Object.keys(taskAssignments).length > 0) {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          const allTasks = tasksData.tasks || [];
+
+          const updatedTasks = allTasks
+            .map((task) => {
+              if (taskAssignments[task.id]) {
+                return {
+                  ...task,
+                  sprint: taskAssignments[task.id],
+                };
+              }
+              return task;
+            })
+            .filter((task) => task.sprint !== sprintNumber);
+
+          const tasksByElement = {};
+          updatedTasks.forEach((task) => {
+            const key = `${task.requirementType}_${task.elementId}`;
+            if (!tasksByElement[key]) {
+              tasksByElement[key] = {
+                requirementType: task.requirementType,
+                elementId: task.elementId,
+                tasks: [],
+              };
+            }
+            tasksByElement[key].tasks.push({
+              id: task.id,
+              titulo: task.titulo,
+              descripcion: task.descripcion,
+              prioridad: task.prioridad,
+              asignados: task.asignados,
+              sprint: task.sprint,
+              estado: task.estado || "Pendiente",
+            });
+          });
+
+          for (const elementData of Object.values(tasksByElement)) {
+            await fetch(`${BACKEND_URL}/projectsFB/${projectId}/tasks`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({
+                requirementType: elementData.requirementType,
+                elementId: elementData.elementId,
+                tasks: elementData.tasks,
+              }),
+            });
+          }
+
+          setAllTasks(updatedTasks);
+        }
+      }
+
+      const updateData = {
+        sprintNumber: newSprintNumber,
+      };
+
+      const response = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/updateSprintNumber`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update project with new sprint count");
+      }
+
+      const updatedProject = { ...project, sprintNumber: newSprintNumber };
+      setProject(updatedProject);
+
+      try {
+        const tasksResponse = await fetch(
+          `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        let allTasks = [];
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json();
+          allTasks = tasksData.tasks || [];
+        }
+
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          allTasks,
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      } catch (taskError) {
+        console.error("Error fetching tasks:", taskError);
+        const regeneratedSprints = generateSprints(
+          newSprintNumber,
+          [],
+          project.sprintDuration || 2,
+          project.fechaCreacion
+        );
+        setSprints(regeneratedSprints);
+      }
+
+      setSuccessMessage("Sprint eliminado exitosamente.");
+    } catch (error) {
+      console.error("Error deleting sprint:", error);
+      setError("Error al eliminar el sprint. Por favor, inténtalo de nuevo.");
+    } finally {
+      setDeletingSprint(false); // Hide spinner
+    }
+  };
+
+  const handleTaskReassignmentConfirm = async (taskAssignments) => {
+    setShowTaskReassignmentPopup(false);
+    setDeletingSprint(true);
+    await performSprintDeletion(sprintToDeleteDashboard, taskAssignments);
+    setTasksToReassign([]);
+    setSprintToDeleteDashboard(null);
+  };
+
+  const handleTaskReassignmentCancel = () => {
+    setShowTaskReassignmentPopup(false);
+    setTasksToReassign([]);
+    setSprintToDeleteDashboard(null);
+  };
+
+  const refreshSprintsData = async () => {
+    try {
+      const tasksResponse = await fetch(
+        `${BACKEND_URL}/projectsFB/${projectId}/all-tasks`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        const allTasks = tasksData.tasks || [];
+
+        // Regenerate sprints with updated task data
+        const sprintNumber = project.sprintNumber || 3;
+        const generatedSprints = generateSprints(
+          sprintNumber,
+          allTasks,
+          sprintDuration,
+          project.fechaCreacion
+        );
+        setSprints(generatedSprints);
+
+        // Update the selected sprint with fresh data
+        if (selectedSprint) {
+          const updatedSelectedSprint = generatedSprints.find(
+            (sprint) => sprint.number === selectedSprint.number
+          );
+          setSelectedSprint(updatedSelectedSprint);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing sprints:", error);
+    }
+  };
+
+  const renderSprintDetails = (selectedSprint) => {
+    return (
+      <SprintDetails
+        sprint={selectedSprint}
+        sprintTasks={allTasks.filter((task) => {
+          return parseInt(task.sprint, 10) === selectedSprint.number;
+        })}
+        setAllTasks={setAllTasks}
+        onClose={handleCloseSprintDetails}
+        projectId={projectId}
+        refreshSprintsData={refreshSprintsData}
+      />
+    );
+  };
+
   if (loading) {
     return (
       <div className="white-container">
@@ -1171,9 +1682,9 @@ const Dashboard = () => {
           <div className="main-title">
             <h1>Dashboard</h1>
           </div>
-          <div className="dashboard-loading">
+          <div className="loading-popup">
             <div className="spinner"></div>
-            <p>Cargando proyecto...</p>
+            <p className="loading-text">Cargando proyecto...</p>
           </div>
         </div>
       </div>
@@ -1292,6 +1803,40 @@ const Dashboard = () => {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="loading-popup">
+            <div className="spinner"></div>
+            <p className="loading-text">Cargando proyecto...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="white-container">
+        <TopAppBar />
+        <div className="home-container">
+          <div className="main-title">
+            <h1>Dashboard</h1>
+          </div>
+          <div className="dashboard-error">
+            <h2>Proyecto no encontrado</h2>
+            <button onClick={() => navigate("/home")}>Volver al inicio</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
@@ -1418,31 +1963,16 @@ const Dashboard = () => {
           availableMembers={availableMembers}
           teamMembers={teamMembers}
           handleSaveTeam={handleSaveTeam}
-          handleCancelTeam={() => setShowTeamPopup(false)}
+          handleCancelTeam={handleCancelTeam}
           setError={setError}
         />
       )}
 
-      {selectedSprint && (
-        <SprintDetails
-          sprint={selectedSprint}
-          sprintTasks={allTasks.filter((task) => {
-            return parseInt(task.sprint, 10) === selectedSprint.number;
-          })}
-          setAllTasks={setAllTasks}
-          onClose={handleCloseSprintDetails}
-          projectId={projectId}
-          fetchAllTasks={fetchAllTasks}
-        />
-      )}
+      {selectedSprint && renderSprintDetails(selectedSprint)}
 
-      {/* Popup de error */}
       <ErrorPopup message={error} onClose={closeErrorPopup} />
-
-      {/* Popup de éxito */}
       <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
 
-      {/* Confirmación de eliminación de tarea */}
       {showDeleteConfirmation && taskToDelete && (
         <div
           className="popup-overlay"
@@ -1483,6 +2013,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
       {showProjectDeleteConfirmation && (
         <div
           className="popup-overlay"
@@ -1518,11 +2049,69 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Task Reassignment Popup */}
+      {showTaskReassignmentPopup && (
+        <TaskReassignmentPopup
+          sprintToDelete={sprintToDeleteDashboard}
+          tasksToReassign={tasksToReassign}
+          availableSprints={sprints.filter(
+            (sprint) => sprint.number !== sprintToDeleteDashboard
+          )}
+          onConfirm={handleTaskReassignmentConfirm}
+          onCancel={handleTaskReassignmentCancel}
+        />
+      )}
+
+      {/* Delete Sprint Confirmation Dialog */}
+      {showDeleteSprintConfirmation && (
+        <div
+          className="popup-overlay"
+          onClick={() => setShowDeleteSprintConfirmation(false)}
+        >
+          <div
+            className="popup-content confirmation-popup"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "400px", textAlign: "center" }}
+          >
+            <h3>Confirmar eliminación de Sprint</h3>
+            <p>
+              ¿Estás seguro que deseas eliminar el último sprint (Sprint{" "}
+              {project.sprintNumber || 3})?
+            </p>
+            <div className="confirmation-actions">
+              <button
+                className="cancel-button"
+                onClick={() => setShowDeleteSprintConfirmation(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="delete-button"
+                onClick={handleDeleteLastSprint}
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Popup de error */}
       <ErrorPopup message={error} onClose={closeErrorPopup} />
 
       {/* Popup de éxito */}
       <SuccessPopup message={successMessage} onClose={closeSuccessPopup} />
+
+      {deletingSprint && (
+        <div className="spinner-overlay">
+          <div className="loading-overlay">
+            <div className="spinner"></div>
+            <p style={{ color: "#fff", fontSize: "18px", marginTop: "10px" }}>
+              Eliminando Sprint...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

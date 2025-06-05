@@ -14,6 +14,7 @@ import SprintBacklog from "./pages/SprintBacklog.jsx";
 import Perfil from "./pages/Perfil.jsx";
 import AvatarIA from "./components/AvatarIA";
 import Biometricos from "./pages/biometricos";
+import TeamDashboard from "./pages/TeamDashboard";
 import ResumenSemanal from "./pages/ResumenSemanal";
 import LoginWhoop from './pages/LoginWhoop';
 import CallbackWhoop from './pages/CallbackWhoop';
@@ -51,6 +52,10 @@ function App() {
           <Route
             path="/biometricos"
             element={isLogin ? <Biometricos /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/team-dashboard"
+            element={isLogin && localStorage.getItem('role') === 'admin' ? <TeamDashboard /> : <Navigate to="/biometricos" />}
           />
           <Route
             path="/resumen-semanal"
