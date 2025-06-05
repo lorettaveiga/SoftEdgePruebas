@@ -261,7 +261,6 @@ const ModificationHistory = ({ projectId }) => {
 
   const sortedHistory = [...history]
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-    .slice(0, 5); // Limit to 5 items
 
   return (
     <div className="modification-history">
