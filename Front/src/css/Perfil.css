@@ -21,13 +21,15 @@
   width: 90%;
   max-width: 600px;
   box-shadow: 0 10px 25px rgba(93, 58, 127, 0.5);
+  max-height: 600px; /* Adjust height as needed */
+  overflow-y: auto; /* Add scroll if content exceeds height */
 }
 
 /* Close button */
 .close-popup-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+  position: relative; /* Change from absolute to relative */
+  top: -1rem; /* Adjust positioning inside the popup */
+  left: -1rem; /* Align to the left inside the popup */
   background: none;
   border: none;
   font-size: 1.8rem;
