@@ -58,6 +58,17 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
+  // Configuración de Content Security Policy
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com; " +
+    "img-src 'self' data: https:; " +
+    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com;"
+  );
+  
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
