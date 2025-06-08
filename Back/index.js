@@ -18,6 +18,8 @@ const allowedOrigins = [
   "https://dialogflow.cloud.google.com",
   "https://extensions.aitopia.ai",
   "https://soft-edge-back.vercel.app",
+  "https://soft-edge-pruebas.vercel.app",
+  "https://soft-edge-pruebas-7rto-1kaz0twoq-lorettaveigas-projects.vercel.app",
   "https://api.prod.whoop.com/oauth/oauth2/auth",
   "https://api.prod.whoop.com/oauth/oauth2/token"
 ];
