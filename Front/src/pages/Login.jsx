@@ -21,31 +21,36 @@ const Login = () => {
 
   const tryLogin = async (user) => {
     try {
+      console.log('Attempting login with:', { email: user.email });
       const result = await fetch(`${BACKEND_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        credentials: "include",
         body: JSON.stringify(user),
       });
 
+      console.log('Login response status:', result.status);
       const data = await result.json();
+      console.log('Login response data:', data);
 
       if (result.ok && data.success) {
-        localStorage.setItem("token", data.token); // Guardar el token en el almacenamiento local
-        localStorage.setItem("userId", data.user.id); // Guardar el userId en el almacenamiento local
-        localStorage.setItem("role", data.user.role); // Guardar el rol en el almacenamiento local
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.user.id);
+        localStorage.setItem("role", data.user.role);
         setIsLogin(true);
-        setUserId(data.user.id); // Guardar el userId en el contexto
-        setRole(data.user.role); // Guardar el rol en el contexto
+        setUserId(data.user.id);
+        setRole(data.user.role);
         return true;
       } else {
-        setError(data.message || "Error al iniciar sesión"); // Establece el mensaje de error
+        setError(data.message || "Error al iniciar sesión");
         return false;
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError(
-        "Error al intentar iniciar sesión. Por favor, verifica tu conexión o intenta más tarde."
-      ); // Establece el mensaje de error
+      setError("Error al intentar iniciar sesión. Por favor, verifica tu conexión o intenta más tarde.");
       return false;
     }
   };
